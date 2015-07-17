@@ -5,6 +5,8 @@
 
 #include "bytes.h"
 #include "default_serializer.hpp"
+#include "data_store.hpp"
+#include "map_index.hpp"
 
 namespace laindb {
 
@@ -78,7 +80,7 @@ namespace laindb {
 
     Value Database::get(Key key)
     {
-        Address addr = index.get(key);
+        Address address = index.get(key);
         Bytes raw = data.load(address);
         return ValueSerializer::deserialize(raw);
     }
@@ -86,15 +88,15 @@ namespace laindb {
     void Database::put(Key key, Value value)
     {
         Bytes raw = ValueSerializer::serialize(value);
-        Address addr = data.store(raw);
-        index.put(key, addr);
+        Address address = data.store(raw);
+        index.put(key, address);
     }
 
     void Database::erase(Key key)
     {
-        Address addr = index.get(key);
+        Address address = index.get(key);
         index.erase(key);
-        data.free(addr);
+        data.free(address);
     }
 
 }

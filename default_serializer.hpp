@@ -35,7 +35,7 @@ namespace laindb {
         return obj;
     }
 
-    T deserialize(Bytes raw)
+    T DefaultSerializer::deserialize(Bytes raw)
     {
         return raw;
     }
