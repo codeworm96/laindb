@@ -4,7 +4,7 @@
 //Note: This file is UNDER CONSTRUCTING!!!
 
 namespace laindb {
-    typedef Bytes int;
+    typedef int Bytes;
 }
 
 #endif //LAINDB_BYTES_H_

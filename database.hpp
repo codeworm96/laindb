@@ -4,6 +4,7 @@
 #include <string>
 
 #include "bytes.h"
+#include "default_serializer.hpp"
 
 namespace laindb {
 
@@ -18,7 +19,7 @@ namespace laindb {
     typedef int Key;//tmp;
     typedef DataStore Data;//tmp;
     typedef MapIndex Index;//tmp;
-    typedef SimpleSerializer ValueSerialer;//tmp;
+    typedef DefaultSerializer ValueSerializer;//tmp;
 
     class Database {
         public:
@@ -69,8 +70,6 @@ namespace laindb {
             //The index of the database
             Index index;
 
-            //Serializer for value
-            ValueSerializer value_serialer;
     };
 
     Database::Database(std::string name) :_name(name), data(name), index(name) {}
@@ -81,12 +80,12 @@ namespace laindb {
     {
         Address addr = index.get(key);
         Bytes raw = data.load(address);
-        return value_serializer.deserialize(raw);
+        return ValueSerializer::deserialize(raw);
     }
 
     void Database::put(Key key, Value value)
     {
-        Bytes raw = value_serializer.serialize(value);
+        Bytes raw = ValueSerializer::serialize(value);
         Address addr = data.store(raw);
         index.put(key, addr);
     }
