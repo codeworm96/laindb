@@ -1,6 +1,11 @@
 #ifndef LAINDB_DEFAULT_SERIALIZER_HPP_
 #define LAINDB_DEFAULT_SERIALIZER_HPP_
 
+#include <cstdint>
+#include <cstdlib>
+
+#include "bytes.h"
+
 namespace laindb {
 
     /*
@@ -20,24 +25,33 @@ namespace laindb {
              * convert type T to Bytes
              */
 
-            static Bytes serialize(T obj);
+            static Bytes serialize(cosnt T & obj);
 
             /*
              * Function:deserialize
              * convert Bytes to type T
+             * Side effect: after the call the raw will be invalid
              */
 
-            static T deserialize(Bytes raw);
+            static T deserialize(Bytes & raw);
     };
 
-    Bytes DefaultSerializer::serialize(T obj)
+    Bytes DefaultSerializer::serialize(const T & obj)
     {
-        return obj;
+        Bytes res;
+        res.size = sizeof(obj);
+        res.raw = std::malloc(res.size);
+        std::memcpy(res.raw, &obj, res.size);
+        return res;
     }
 
-    T DefaultSerializer::deserialize(Bytes raw)
+    T DefaultSerializer::deserialize(Bytes & raw)
     {
-        return raw;
+        T res(*(static_cast<T *>(raw.raw)));
+        std::free(res.raw);
+        res.raw = nullptr;
+        res.size = 0;
+        return res;
     }
 
 }

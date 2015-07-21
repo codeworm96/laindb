@@ -16,7 +16,7 @@ namespace laindb {
         //the length of the byte string (16 bits integer)
         int16_t size;
         //pointer to the byte string
-        char * raw;
+        void * raw;
 
         //constructors
         Byte() :size(0), raw(nullptr) {}
