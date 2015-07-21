@@ -31,28 +31,28 @@ namespace laindb {
              * Should open a database which name is `name`
              */
 
-            Database(std::string name);
+            Database(const std::string & name);
 
             /*
              * Method: get
              * Fetch the value from the data file according to the key
              */
 
-            Value get(Key key);
+            Value get(const Key & key);
 
             /*
              * Method: put
              * Put a pair of key/value into the database
              */
 
-            void put(Key key, Value value);
+            void put(const Key & key, const Value & value);
 
             /*
              * Method: erase
              * Erase a key/value pair from the database accoring to the key
              */
 
-            void erase(Key key);
+            void erase(const Key & key);
 
             /*
              * Destructor
@@ -74,25 +74,25 @@ namespace laindb {
 
     };
 
-    Database::Database(std::string name) :_name(name), data(name), index(name) {}
+    Database::Database(const std::string & name) :_name(name), data(name), index(name) {}
 
     Database::~Database() {}
 
-    Value Database::get(Key key)
+    Value Database::get(const Key & key)
     {
         Address address = index.get(key);
         Bytes raw = data.load(address);
         return ValueSerializer::deserialize(raw);
     }
 
-    void Database::put(Key key, Value value)
+    void Database::put(const Key & key, const Value & value)
     {
         Bytes raw = ValueSerializer::serialize(value);
         Address address = data.store(raw);
         index.put(key, address);
     }
 
-    void Database::erase(Key key)
+    void Database::erase(const Key & key)
     {
         Address address = index.get(key);
         index.erase(key);

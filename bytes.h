@@ -19,8 +19,8 @@ namespace laindb {
         void * raw;
 
         //constructors
-        Byte() :size(0), raw(nullptr) {}
-        Byte(int16_t sz, char * p) :size(sz), raw(p) {}
+        Bytes() :size(0), raw(nullptr) {}
+        Bytes(int16_t sz, char * p) :size(sz), raw(p) {}
     };
 
 }

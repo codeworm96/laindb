@@ -17,11 +17,11 @@ namespace laindb {
     class MapIndex{
         public:
 
-            MapIndex(std::string name) {}
+            MapIndex(const std::string & name) {}
             ~MapIndex() {}
-            Address get(Key key) { return table[key]; }
-            void put(Key key, Address address) { table[key] = address; }
-            void erase(Key key) { table.erase(key); }
+            Address get(const Key & key) { return table[key]; }
+            void put(const Key & key, Address address) { table[key] = address; }
+            void erase(const Key & key) { table.erase(key); }
 
         private:
             std::map<Key, Address> table;

@@ -18,10 +18,10 @@ namespace laindb {
     class DataStore{
         public:
 
-            DataStore(std::string name) {}
+            DataStore(const std::string & name) {}
             ~DataStore() {}
             Bytes load(Address address) { return table[address]; }
-            Address store(Bytes raw) { table.push_back(raw); return table.size() - 1; }
+            Address store(const Bytes & raw) { table.push_back(raw); return table.size() - 1; }
             void free(Address address) { }
 
         private:

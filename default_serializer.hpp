@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 
 #include "bytes.h"
 
@@ -25,7 +26,7 @@ namespace laindb {
              * convert type T to Bytes
              */
 
-            static Bytes serialize(cosnt T & obj);
+            static Bytes serialize(const T & obj);
 
             /*
              * Function:deserialize
@@ -48,9 +49,9 @@ namespace laindb {
     T DefaultSerializer::deserialize(Bytes & raw)
     {
         T res(*(static_cast<T *>(raw.raw)));
-        std::free(res.raw);
-        res.raw = nullptr;
-        res.size = 0;
+        std::free(raw.raw);
+        raw.raw = nullptr;
+        raw.size = 0;
         return res;
     }
 
