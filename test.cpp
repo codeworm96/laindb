@@ -1,5 +1,6 @@
+#define BENCHMARK
 #include <iostream>
-#include <iostream>
+#include <ctime>
 #include "database.hpp"
 #include "modes.h"
 
@@ -25,4 +26,6 @@ int main()
             db.erase(a);
         }
     }
+    
+    std::cout << db.TIME / static_cast<double>(CLOCKS_PER_SEC) << "s" << std::endl;
 }

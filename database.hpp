@@ -1,6 +1,12 @@
 #ifndef LAINDB_DATABASE_HPP_
 #define LAINDB_DATABASE_HPP_
 
+#ifdef BENCHMARK
+
+#include <ctime>
+
+#endif
+
 #include <string>
 
 #include "bytes.h"
@@ -63,6 +69,10 @@ namespace laindb {
 
             ~Database();
 
+#ifdef BENCHMARK
+            int TIME;
+#endif
+
         private:
 
             //The name of the database
@@ -76,29 +86,62 @@ namespace laindb {
 
     };
 
-    Database::Database(const std::string & name, int mode) :_name(name), data(name, mode), index(name) {}
+    Database::Database(const std::string & name, int mode) :_name(name), data(name, mode), index(name) 
+    {
+#ifdef BENCHMARK
+        TIME = 0;
+#endif
+    }
 
     Database::~Database() {}
 
     Value Database::get(const Key & key)
     {
+#ifdef BENCHMARK
+        int START = std::clock();
+#endif
+
         Address address = index.get(key);
         Bytes raw = data.load(address);
+
+#ifdef BENCHMARK
+        int END = std::clock();
+        TIME += END - START;
+#endif
+
         return ValueSerializer::deserialize(raw);
     }
 
     void Database::put(const Key & key, const Value & value)
     {
+#ifdef BENCHMARK
+        int START = std::clock();
+#endif
+
         Bytes raw = ValueSerializer::serialize(value);
         Address address = data.store(raw);
         index.put(key, address);
+
+#ifdef BENCHMARK
+        int END = std::clock();
+        TIME += END - START;
+#endif
     }
 
     void Database::erase(const Key & key)
     {
+#ifdef BENCHMARK
+        int START = std::clock();
+#endif
+
         Address address = index.get(key);
         index.erase(key);
         data.free(address);
+
+#ifdef BENCHMARK
+        int END = std::clock();
+        TIME += END - START;
+#endif
     }
 
 }
