@@ -8,13 +8,13 @@
 
 #include "bytes.h"
 #include "modes.h"
-#include "append_only_allocator.h"
+#include "default_allocator.h"
 
 namespace laindb {
 
     //NOTE: use typedef instead of template parameters now
     typedef int Address;
-    typedef AppendOnlyAllocator Allocator;
+    typedef DefaultAllocator Allocator;
 
     /*
      * Class: DataStore
