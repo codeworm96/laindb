@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "bytes.h"
+#include "modes.h"
 
 namespace laindb {
 
@@ -15,7 +16,7 @@ namespace laindb {
 
     class Allocator {
         public:
-            Allocator(const std::string & name) :size(0){}
+            Allocator(const std::string & name, int mode) :size(0){}
             Address alloc(int16_t s) { Address res = size; size += s; return res; }
             void dealloc(Address addr, int16_t s) {}
         private:
@@ -24,28 +25,80 @@ namespace laindb {
 
     /*
      * Class: DataStore
-     * A implementation of Data for debug
+     * In change of storing the values
      */
 
     class DataStore{
         public:
 
-            DataStore(const std::string & name);
-            ~DataStore() { std::fclose(data_file);}
+            /*
+             * Constructor:
+             * Construct a data store.
+             * name: name of the file
+             * mode: construct modes;
+             */
+
+            DataStore(const std::string & name, int mode);
+
+            /*
+             * Destructor
+             * close data store
+             */
+
+            ~DataStore();
+
+            /*
+             * method: load
+             * load data from file
+             */
+
             Bytes load(Address address);
-            //Side effect: after the call the raw will be invalid
+
+            /*
+             * method: store
+             * store data into file
+             * Side effect: after the call the raw will be invalid
+             */
+
             Address store(Bytes & raw);
+
+
+            /*
+             * method: free
+             * free a block
+             */
+
             void free(Address address);
 
         private:
             FILE * data_file;
-            Allocator allocator;
+            Allocator * allocator;
     };
 
-    DataStore::DataStore(const std::string & name):allocator(name)
+    DataStore::DataStore(const std::string & name, int mode) :data_file(nullptr), allocator(nullptr)
     {
-        std::string data_file_name = name + std::string(".dat");
-        data_file = fopen(data_file_name.c_str(), "w+b");
+        std::string idle_file_name = std::string("idle_") + name;
+        if(mode & 1){
+            data_file = std::fopen(name.c_str(), "r+b");
+        }
+        if (data_file){
+            allocator = new Allocator(idle_file_name, OPEN);
+        }else{
+            if(mode & 2){
+                data_file = std::fopen(name.c_str(), "w+b");
+            }
+            if (data_file){
+                allocator = new Allocator(idle_file_name, NEW);
+            }else{
+                std::runtime_error("cannot open data file");
+            }
+        }
+    }
+    
+    DataStore::~DataStore()
+    {
+        delete allocator;
+        std::fclose(data_file);
     }
 
     Bytes DataStore::load(Address address)
@@ -60,7 +113,7 @@ namespace laindb {
 
     Address DataStore::store(Bytes & raw)
     {
-        Address res = allocator.alloc(raw.size + sizeof raw.size);
+        Address res = allocator->alloc(raw.size + sizeof raw.size);
         std::fseek(data_file, res, SEEK_SET);
         std::fwrite(&raw.size, sizeof raw.size, 1, data_file); //store size
         std::fwrite(raw.raw, raw.size, 1, data_file); //store the byte string
@@ -76,7 +129,7 @@ namespace laindb {
         int16_t size;
         std::fseek(data_file, address, SEEK_SET);
         std::fread(&size, sizeof size, 1, data_file); //load size
-        allocator.dealloc(address, size + sizeof size);
+        allocator->dealloc(address, size + sizeof size);
     }
 }
 

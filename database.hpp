@@ -4,6 +4,7 @@
 #include <string>
 
 #include "bytes.h"
+#include "modes.h"
 #include "default_serializer.hpp"
 #include "data_store.hpp"
 #include "map_index.hpp"
@@ -29,9 +30,10 @@ namespace laindb {
             /*
              * Constructor
              * Should open a database which name is `name`
+             * using mode `mode`
              */
 
-            Database(const std::string & name);
+            Database(const std::string & name, int mode = CREATE);
 
             /*
              * Method: get
@@ -74,7 +76,7 @@ namespace laindb {
 
     };
 
-    Database::Database(const std::string & name) :_name(name), data(name), index(name) {}
+    Database::Database(const std::string & name, int mode) :_name(name), data(name, mode), index(name) {}
 
     Database::~Database() {}
 

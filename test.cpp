@@ -1,10 +1,11 @@
 #include <iostream>
 #include <iostream>
 #include "database.hpp"
+#include "modes.h"
 
 int main()
 {
-    laindb::Database db("123");
+    laindb::Database db("123", laindb::NEW);
     while(true){
         std::string s;
         std::cin >> s;
