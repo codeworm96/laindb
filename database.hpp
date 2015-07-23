@@ -86,7 +86,7 @@ namespace laindb {
 
     };
 
-    Database::Database(const std::string & name, int mode) :_name(name), data(name, mode), index(name) 
+    Database::Database(const std::string & name, int mode) :_name(name), data(name + std::string(".dat"), mode), index(name + std::string(".idx")) 
     {
 #ifdef BENCHMARK
         TIME = 0;

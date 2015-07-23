@@ -8,20 +8,13 @@
 
 #include "bytes.h"
 #include "modes.h"
+#include "append_only_allocator.h"
 
 namespace laindb {
 
     //NOTE: use typedef instead of template parameters now
     typedef int Address;
-
-    class Allocator {
-        public:
-            Allocator(const std::string & name, int mode) :size(0){}
-            Address alloc(int16_t s) { Address res = size; size += s; return res; }
-            void dealloc(Address addr, int16_t s) {}
-        private:
-            int size;
-    };
+    typedef AppendOnlyAllocator Allocator;
 
     /*
      * Class: DataStore
@@ -78,13 +71,13 @@ namespace laindb {
     DataStore::DataStore(const std::string & name, int mode) :data_file(nullptr), allocator(nullptr)
     {
         std::string idle_file_name = std::string("idle_") + name;
-        if(mode & 1){
+        if(mode & OPEN){
             data_file = std::fopen(name.c_str(), "r+b");
         }
         if (data_file){
             allocator = new Allocator(idle_file_name, OPEN);
         }else{
-            if(mode & 2){
+            if(mode & NEW){
                 data_file = std::fopen(name.c_str(), "w+b");
             }
             if (data_file){

@@ -4,7 +4,7 @@
 #include "database.hpp"
 #include "modes.h"
 
-const int NREC = 100000;
+const int NREC = 1000000;
 
 int main()
 {
