@@ -39,7 +39,7 @@ namespace laindb {
              * using mode `mode`
              */
 
-            Database(const std::string & name, int mode = CREATE);
+            Database(const std::string & name, FileMode mode = CREATE);
 
             /*
              * Method: get
@@ -86,7 +86,7 @@ namespace laindb {
 
     };
 
-    Database::Database(const std::string & name, int mode) :_name(name), data(name + std::string(".dat"), mode), index(name + std::string(".idx")) 
+    Database::Database(const std::string & name, FileMode mode) :_name(name), data(name + std::string(".dat"), mode), index(name + std::string(".idx")) 
     {
 #ifdef BENCHMARK
         TIME = 0;

@@ -19,7 +19,7 @@ namespace laindb {
              * using name & mode
              */
 
-            AppendOnlyAllocator(const std::string & name, int mode);
+            AppendOnlyAllocator(const std::string & name, FileMode mode);
 
             /*
              * Destructor
@@ -49,7 +49,7 @@ namespace laindb {
             std::string _name;
     };
 
-    AppendOnlyAllocator::AppendOnlyAllocator(const std::string & name, int mode):_name(name)
+    AppendOnlyAllocator::AppendOnlyAllocator(const std::string & name, FileMode mode):_name(name)
     {
         if(mode & OPEN){
             FILE * idle_file = std::fopen(name.c_str(), "rb");

@@ -31,7 +31,7 @@ namespace laindb {
              * mode: construct modes;
              */
 
-            DataStore(const std::string & name, int mode);
+            DataStore(const std::string & name, FileMode mode);
 
             /*
              * Destructor
@@ -68,7 +68,7 @@ namespace laindb {
             Allocator * allocator;
     };
 
-    DataStore::DataStore(const std::string & name, int mode) :data_file(nullptr), allocator(nullptr)
+    DataStore::DataStore(const std::string & name, FileMode mode) :data_file(nullptr), allocator(nullptr)
     {
         std::string idle_file_name = std::string("idle_") + name;
         if(mode & OPEN){
