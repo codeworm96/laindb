@@ -79,14 +79,14 @@ namespace laindb {
             //reverse a list
             void reverse(Block * & list);
 
-            //insert a block to the list, keeping the ascending order
+            //insert a block to the list, keeping the ascending order of size
             void insert_sort(Block * & list, Block * blk);
 
             //find the bestfit block
             Block * bestfit(Block * & list, int16_t size);
 
             //defragmentation
-            void defragment(Block * & list) {}
+            void defragment(Block * & list);
     };
 
     DefaultAllocator::DefaultAllocator(const std::string & name, FileMode mode):size(0), avail(nullptr), _name(name)
@@ -212,6 +212,49 @@ namespace laindb {
                 return blk;
             }
             p = p->next;
+        }
+    }
+
+    void DefaultAllocator::defragment(Block * & list)
+    {
+        //sort the list by the ascending order of address (insert sort)
+        Block * tmp = new Block(0, 0, nullptr);
+        Block * cur = list;
+        while(cur){
+            Block * next = cur->next;
+            Block * p = tmp;
+            while(true){
+                if (p->next == nullptr || cur->addr < p->next->addr){
+                    cur->next = p->next;
+                    p->next = cur;
+                    break;
+                }
+                p = p->next;
+            }
+            cur = next;
+        }
+        cur = tmp->next;
+        delete tmp;
+
+        //merge blocks
+        Block * head = cur;
+        while(cur){
+            if (cur->next && cur->addr + cur->size == cur->next->addr){
+                cur->size += cur->next->size;
+                Block * tmp = cur->next;
+                cur->next = tmp->next;
+                delete tmp;
+            }else{
+                cur = cur->next;
+            }
+        }
+
+        //sort by ascending order of size
+        list = nullptr;
+        while(head){
+            Block * p = head;
+            head = head->next;
+            insert_sort(list, p);
         }
     }
 
