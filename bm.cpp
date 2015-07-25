@@ -4,7 +4,7 @@
 #include <set>
 
 #include "database.hpp"
-#include "modes.h"
+#include "utility.h"
 
 const int NREC = 1000000;
 

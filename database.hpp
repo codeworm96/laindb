@@ -10,7 +10,7 @@
 #include <string>
 
 #include "bytes.h"
-#include "modes.h"
+#include "utility.h"
 #include "default_serializer.hpp"
 #include "data_store.hpp"
 #include "map_index.hpp"

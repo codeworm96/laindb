@@ -2,7 +2,7 @@
 #include <iostream>
 #include <ctime>
 #include "database.hpp"
-#include "modes.h"
+#include "utility.h"
 
 int main()
 {

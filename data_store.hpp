@@ -7,7 +7,7 @@
 #include <cstdint>
 
 #include "bytes.h"
-#include "modes.h"
+#include "utility.h"
 #include "default_allocator.h"
 
 namespace laindb {
