@@ -18,6 +18,7 @@ int main()
         db.put(i, i);
         keys.insert(i);
     }
+    
     //step 2
     for (int i = 0; i < NREC; ++i){
         int x = db.get(i);
@@ -36,7 +37,7 @@ int main()
             while(keys.count(k) == 0){
                 k = rand() % (5 * NREC);
             }
-            db.erase(k);
+           // db.erase(k);
         }
 
         if (i % 11 == 0){
@@ -56,6 +57,7 @@ int main()
             db.put(k, k);
         }
     }
+    
 
     std::cout << db.TIME / static_cast<double>(CLOCKS_PER_SEC) << "s" << std::endl;
 }

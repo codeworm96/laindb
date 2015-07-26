@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdint>
+#include <stdexcept>
 
 #include "bytes.h"
 #include "utility.h"
@@ -83,7 +84,7 @@ namespace laindb {
             if (data_file){
                 allocator = new Allocator(idle_file_name, NEW);
             }else{
-                std::runtime_error("cannot open data file");
+                throw std::runtime_error("cannot open data file");
             }
         }
     }

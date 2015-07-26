@@ -13,7 +13,7 @@
 #include "utility.h"
 #include "default_serializer.hpp"
 #include "data_store.hpp"
-#include "map_index.hpp"
+#include "bptree_index.hpp"
 
 namespace laindb {
 
@@ -27,7 +27,7 @@ namespace laindb {
     typedef int Value;//tmp;
     typedef int Key;//tmp;
     typedef DataStore Data;//tmp;
-    typedef MapIndex Index;//tmp;
+    typedef BptreeIndex Index;//tmp;
     typedef DefaultSerializer ValueSerializer;//tmp;
 
     class Database {
@@ -86,7 +86,7 @@ namespace laindb {
 
     };
 
-    Database::Database(const std::string & name, FileMode mode) :_name(name), data(name + std::string(".dat"), mode), index(name + std::string(".idx")) 
+    Database::Database(const std::string & name, FileMode mode) :_name(name), data(name + std::string(".dat"), mode), index(name + std::string(".idx"), mode) 
     {
 #ifdef BENCHMARK
         TIME = 0;
@@ -120,7 +120,10 @@ namespace laindb {
 
         Bytes raw = ValueSerializer::serialize(value);
         Address address = data.store(raw);
-        index.put(key, address);
+        Address old_addr = index.put(key, address);
+        if (old_addr != NEW_ENTRY){
+            data.free(old_addr);
+        }
 
 #ifdef BENCHMARK
         int END = std::clock();
