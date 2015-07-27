@@ -31,7 +31,6 @@ namespace laindb {
             /*
              * Function:deserialize
              * convert Bytes to type T
-             * Side effect: after the call the raw will be invalid
              */
 
             static T deserialize(Bytes & raw);
@@ -49,9 +48,6 @@ namespace laindb {
     T DefaultSerializer::deserialize(Bytes & raw)
     {
         T res(*(static_cast<T *>(raw.raw)));
-        std::free(raw.raw);
-        raw.raw = nullptr;
-        raw.size = 0;
         return res;
     }
 

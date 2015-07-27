@@ -103,13 +103,15 @@ namespace laindb {
 
         Address address = index.get(key);
         Bytes raw = data.load(address);
+        Value res = ValueSerializer::deserialize(raw);
+        std::free(raw.raw);
 
 #ifdef BENCHMARK
         int END = std::clock();
         TIME += END - START;
 #endif
 
-        return ValueSerializer::deserialize(raw);
+        return res;
     }
 
     void Database::put(const Key & key, const Value & value)

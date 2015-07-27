@@ -232,10 +232,9 @@ namespace laindb {
         for (int i = 0; i < res->num; ++i){            
             Bytes bytes;
             std::memcpy(&bytes.size, cur, sizeof bytes.size);
-            bytes.raw = std::malloc(bytes.size);
-            std::memcpy(bytes.raw, cur + sizeof(bytes.size), bytes.size);
-            cur += KEY_SIZE;
+            bytes.raw = cur + sizeof(bytes.size);
             res->keys[i] = DefaultSerializer::deserialize(bytes);
+            cur += KEY_SIZE;
         }
 
         int num = res->num;
