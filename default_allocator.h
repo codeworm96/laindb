@@ -139,7 +139,15 @@ namespace laindb {
 
         if (blk){
             Address res = blk->addr;
-            delete blk;
+
+            if (blk->size > s){ //return left space
+                blk->size -= s;
+                blk->addr += s;
+                insert_sort(avail, blk);
+            }else{
+                delete blk;
+            }
+
             return res;
         }else{
             Address res = size;
