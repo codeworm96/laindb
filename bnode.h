@@ -5,7 +5,7 @@
 namespace laindb {
 
     //the minimum # of keys in a node (except root)
-    const int MIN_KEYS = 4;
+    const int MIN_KEYS = 128;
     //the maximum # of keys in a node
     const int MAX_KEYS = MIN_KEYS * 2 + 1;
     

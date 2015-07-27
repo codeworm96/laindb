@@ -16,7 +16,7 @@ namespace laindb {
 
     const int BLOCK_SIZE = 4096;
 
-    const int KEY_SIZE = 16;
+    const int KEY_SIZE = 6;
 
     const char ZERO = 0;
 
@@ -91,10 +91,12 @@ namespace laindb {
             file = std::fopen(name.c_str(), "r+b");
         }
         if(file){
-            FILE * idle_file = std::fopen(idle_name.c_str(), "r+b");
+            FILE * idle_file = std::fopen(idle_name.c_str(), "rb");
             if (idle_file){
                 std::fread(&rootID, sizeof rootID, 1, file);
+                std::cout << rootID << std::endl;
                 std::fread(&size, sizeof size, 1, file);
+                std::cout << size << std::endl;
                 int num;
                 std::fread(&num, sizeof num, 1, idle_file);
                 for (int i = 0; i < num; ++i){
@@ -124,8 +126,10 @@ namespace laindb {
         std::cout<<"begin";
         std::string idle_name = std::string("idle_") + name;
         std::fseek(file, 0, SEEK_SET);
+        std::cout << rootID;
         std::fwrite(&rootID, sizeof rootID, 1, file);
         std::fwrite(&size, sizeof size, 1, file);
+        std::fclose(file);
 
         FILE * idle_file = std::fopen(idle_name.c_str(), "wb");
         int num = blocks.size();
@@ -133,7 +137,7 @@ namespace laindb {
         for (int i = 0; i < num; ++i){
             std::fwrite(&blocks[i], sizeof blocks[i], 1, idle_file);
         }
-        fclose(idle_file);
+        std::fclose(idle_file);
         std::cout<<"end";
     }
 
