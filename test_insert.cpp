@@ -13,7 +13,7 @@ int main()
     //step 1 insert
     {
         laindb::Database db("123", laindb::NEW);
-        for (int i = 0; i < NREC; ++i){
+        for (int i = NREC - 1; i >= 0; --i){
             db.put(i, i);
         }
         std::cout << "insert " << NREC << " " << db.TIME / static_cast<double>(CLOCKS_PER_SEC) << "s" << std::endl;

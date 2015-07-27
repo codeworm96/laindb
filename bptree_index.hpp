@@ -5,7 +5,6 @@
 
 #include "utility.h"
 #include "bnode.h"
-#include "cache.hpp"
 #include "node_store.hpp"
 
 
@@ -44,10 +43,8 @@ namespace laindb {
             //the root of the b+tree, should be in the memory when the database is open
             BNode * root;
 
-            //Note: we will use the order with construct & destruct
+            //to store the nodes
             NodeStore store;
-
-            Cache cache;
 
             /*
              * method: search
@@ -66,10 +63,11 @@ namespace laindb {
             void split(BNode * node, int pos, BNode * left);
     };
 
-    BptreeIndex::BptreeIndex(const std::string & name, FileMode mode) :store(name, mode), cache(&store)
+    BptreeIndex::BptreeIndex(const std::string & name, FileMode mode) :store(name, mode)
     {
-        if(store.rootID){
-            root = cache.load(store.rootID);
+        int rootID = store.getRootID();
+        if(rootID){
+            root = store.load(rootID);
         }else{
             root = nullptr;
         }
@@ -78,7 +76,7 @@ namespace laindb {
     BptreeIndex::~BptreeIndex()
     {
         if(root){
-            cache.write(root);
+            store.write(root);
         }
     }
 
@@ -111,10 +109,10 @@ namespace laindb {
             ++pos;
             if (cur != root){
                 BNode * tmp = cur;
-                cur = cache.load(cur->children[pos]);
-                cache.write(tmp);
+                cur = store.load(cur->children[pos]);
+                store.write(tmp);
             }else{
-                cur = cache.load(cur->children[pos]);
+                cur = store.load(cur->children[pos]);
             }
         }
 
@@ -127,7 +125,7 @@ namespace laindb {
         Address res = cur->children[pos];
 
         if (cur != root){
-            cache.write(cur);
+            store.write(cur);
         }
 
         return res;
@@ -162,7 +160,7 @@ namespace laindb {
         left->num = MIN_KEYS;
         left->modified = true;
 
-        cache.write(right);
+        store.write(right);
     }
 
     Address BptreeIndex::put(const Key & key, Address address)
@@ -170,7 +168,7 @@ namespace laindb {
         if(root == nullptr){
             root = new BNode;
             root->id = store.alloc();
-            store.rootID = root->id;
+            store.setRootID(root->id);
             root->modified = true;
             root->is_leaf = true;
             root->num = 0;
@@ -180,30 +178,30 @@ namespace laindb {
             BNode * old_root = root;
             root = new BNode;
             root->id = store.alloc();
-            store.rootID = root->id;
+            store.setRootID(root->id);
             root->modified = true;
             root->is_leaf = false;
             root->num = 0;
             root->children[0] = old_root->id; 
             split(root, 0, old_root);
-            cache.write(old_root);
+            store.write(old_root);
         }
 
         BNode * cur = root;
         while(!cur->is_leaf){
             int pos = search(cur, key);
             ++pos;
-            BNode * next = cache.load(cur->children[pos]);
+            BNode * next = store.load(cur->children[pos]);
             if (next->num >= MAX_KEYS){
                 split(cur, pos, next);
-                cache.write(next);
+                store.write(next);
                 pos = search(cur, key);
                 ++pos;
-                next = cache.load(cur->children[pos]);
+                next = store.load(cur->children[pos]);
             }
             
             if (cur != root){
-                cache.write(cur);
+                store.write(cur);
             }
 
             cur = next;
@@ -225,7 +223,7 @@ namespace laindb {
         cur->modified = true;
 
         if (cur != root){
-            cache.write(cur);
+            store.write(cur);
         }
 
         return res;

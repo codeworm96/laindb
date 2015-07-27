@@ -66,8 +66,19 @@ namespace laindb {
 
             BNode * load(int id);
 
-            //id of root of the b+tree
-            int rootID;
+            /*
+             * method: getRootID
+             * getter for rootID
+             */
+
+            int getRootID() { return rootID; }
+
+            /*
+             * method: setRootID
+             * setter for rootID
+             */
+
+            void setRootID(int new_id) { rootID = new_id; }
 
         private:
             //name
@@ -82,6 +93,8 @@ namespace laindb {
             //# of blocks in file
             int size;
 
+            //id of root of the b+tree
+            int rootID;
     };
 
     NodeStore::NodeStore(std::string file_name, FileMode mode) :name(file_name), file(nullptr), size(0)
@@ -162,6 +175,11 @@ namespace laindb {
 
     void NodeStore::write(BNode * node)
     {
+        if (!node->modified){
+            delete node;
+            return;
+        }
+
         char * raw = static_cast<char *>(std::malloc(BLOCK_SIZE));
         char * cur = raw;
         std::memcpy(cur, &node->num, sizeof node->num);
