@@ -1,8 +1,17 @@
 #define BENCHMARK
 #include <iostream>
+#include <sstream>
 #include <ctime>
 #include "database.hpp"
 #include "utility.h"
+
+std::string itos(int x)
+{
+    ostringstream oss;
+    oss << x;
+    return oss.str();
+}
+
 
 int main()
 {

@@ -16,8 +16,6 @@ namespace laindb {
 
     const int BLOCK_SIZE = 4096;
 
-    const int KEY_SIZE = 6;
-
     const char ZERO = 0;
 
     /*
@@ -136,10 +134,8 @@ namespace laindb {
 
     NodeStore::~NodeStore()
     {
-        std::cout<<"begin";
         std::string idle_name = std::string("idle_") + name;
         std::fseek(file, 0, SEEK_SET);
-        std::cout << rootID;
         std::fwrite(&rootID, sizeof rootID, 1, file);
         std::fwrite(&size, sizeof size, 1, file);
         std::fclose(file);
@@ -151,7 +147,6 @@ namespace laindb {
             std::fwrite(&blocks[i], sizeof blocks[i], 1, idle_file);
         }
         std::fclose(idle_file);
-        std::cout<<"end";
     }
 
     int NodeStore::alloc()
@@ -182,31 +177,19 @@ namespace laindb {
 
         char * raw = static_cast<char *>(std::malloc(BLOCK_SIZE));
         char * cur = raw;
-        std::memcpy(cur, &node->num, sizeof node->num);
-        cur += sizeof node->num;
-        std::memcpy(cur, &node->is_leaf, sizeof node->is_leaf);
-        cur += sizeof node->is_leaf;
-        for (int i = 0; i < node->num; ++i){
-            Bytes bytes = DefaultSerializer::serialize(node->keys[i]);
-            if (bytes.size + sizeof bytes.size <= KEY_SIZE){
-                std::memcpy(cur, &bytes.size, sizeof bytes.size);
-                std::memcpy(cur + sizeof(bytes.size), bytes.raw, bytes.size);
-                cur += KEY_SIZE;
-                std::free(bytes.raw);
-            }else{
-                std::free(bytes.raw);
-                throw std::runtime_error("key too long");
-            }
-        }
+        std::memcpy(cur, &node->num, sizeof(node->num));
+        cur += sizeof(node->num);
+        std::memcpy(cur, &node->is_leaf, sizeof(node->is_leaf));
+        cur += sizeof(node->is_leaf);
+        std::memcpy(cur, &node->keys, sizeof(Key) * node->num);
+        cur += sizeof(Key) * node->num;
+
         int num = node->num;
         if(!node->is_leaf){
             num++;
         }
 
-        for (int i = 0; i < num; ++i){
-            std::memcpy(cur, &node->children[i], sizeof node->children[i]);
-            cur += sizeof node->children[i];
-        }
+        std::memcpy(cur, &node->children, sizeof(Address) * num);
 
         std::fseek(file, BLOCK_SIZE * node->id, SEEK_SET);
         std::fwrite(raw, BLOCK_SIZE, 1, file);
@@ -225,27 +208,19 @@ namespace laindb {
         std::fread(raw, BLOCK_SIZE, 1, file);
         char * cur = raw;
 
-        std::memcpy(&res->num, cur, sizeof res->num);
-        cur += sizeof res->num;
-        std::memcpy(&res->is_leaf, cur, sizeof res->is_leaf);
-        cur += sizeof res->is_leaf;
-        for (int i = 0; i < res->num; ++i){            
-            Bytes bytes;
-            std::memcpy(&bytes.size, cur, sizeof bytes.size);
-            bytes.raw = cur + sizeof(bytes.size);
-            res->keys[i] = DefaultSerializer::deserialize(bytes);
-            cur += KEY_SIZE;
-        }
+        std::memcpy(&res->num, cur, sizeof(res->num));
+        cur += sizeof(res->num);
+        std::memcpy(&res->is_leaf, cur, sizeof(res->is_leaf));
+        cur += sizeof(res->is_leaf);
+        std::memcpy(&res->keys, cur, sizeof(Key) * res->num);
+        cur += sizeof(Key) * res->num;
 
         int num = res->num;
         if(!res->is_leaf){
             num++;
         }
 
-        for (int i = 0; i < num; ++i){
-            std::memcpy(&res->children[i], cur, sizeof res->children[i]);
-            cur += sizeof res->children[i];
-        }
+        std::memcpy(&res->children, cur, sizeof(Address) * num);
 
         std::free(raw);
         return res;

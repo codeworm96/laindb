@@ -9,6 +9,7 @@
 
 #include <string>
 
+#include "key_type.h"
 #include "bytes.h"
 #include "utility.h"
 #include "default_serializer.hpp"
@@ -25,7 +26,6 @@ namespace laindb {
 
     //NOTE: use these alias to replace template parameter for now
     typedef int Value;//tmp;
-    typedef int Key;//tmp;
     typedef DataStore Data;//tmp;
     typedef BptreeIndex Index;//tmp;
     typedef DefaultSerializer ValueSerializer;//tmp;
@@ -46,21 +46,21 @@ namespace laindb {
              * Fetch the value from the data file according to the key
              */
 
-            Value get(const Key & key);
+            Value get(const char * key);
 
             /*
              * Method: put
              * Put a pair of key/value into the database
              */
 
-            void put(const Key & key, const Value & value);
+            void put(const char * key, const Value & value);
 
             /*
              * Method: erase
              * Erase a key/value pair from the database accoring to the key
              */
 
-            void erase(const Key & key);
+            void erase(const char * key);
 
             /*
              * Destructor
@@ -95,13 +95,13 @@ namespace laindb {
 
     Database::~Database() {}
 
-    Value Database::get(const Key & key)
+    Value Database::get(const char * key)
     {
 #ifdef BENCHMARK
         int START = std::clock();
 #endif
 
-        Address address = index.get(key);
+        Address address = index.get(make_key(key));
         Bytes raw = data.load(address);
         Value res = ValueSerializer::deserialize(raw);
         std::free(raw.raw);
@@ -114,7 +114,7 @@ namespace laindb {
         return res;
     }
 
-    void Database::put(const Key & key, const Value & value)
+    void Database::put(const char * key, const Value & value)
     {
 #ifdef BENCHMARK
         int START = std::clock();
@@ -122,7 +122,7 @@ namespace laindb {
 
         Bytes raw = ValueSerializer::serialize(value);
         Address address = data.store(raw);
-        Address old_addr = index.put(key, address);
+        Address old_addr = index.put(make_key(key), address);
         if (old_addr != NEW_ENTRY){
             data.free(old_addr);
         }
@@ -133,14 +133,14 @@ namespace laindb {
 #endif
     }
 
-    void Database::erase(const Key & key)
+    void Database::erase(const char * key)
     {
 #ifdef BENCHMARK
         int START = std::clock();
 #endif
 
-        Address address = index.get(key);
-        index.erase(key);
+        Address address = index.get(make_key(key));
+        index.erase(make_key(key));
         data.free(address);
 
 #ifdef BENCHMARK
