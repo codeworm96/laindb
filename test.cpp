@@ -5,14 +5,6 @@
 #include "database.hpp"
 #include "utility.h"
 
-std::string itos(int x)
-{
-    ostringstream oss;
-    oss << x;
-    return oss.str();
-}
-
-
 int main()
 {
     laindb::Database db("123", laindb::NEW);
@@ -22,17 +14,22 @@ int main()
         if (s == "exit"){
             break;
         }else if (s == "i"){
-            int a, b;
+            std::string a;
+            int b;
             std::cin >> a >> b;
-            db.put(a, b);
+            db.put(a.c_str(), b);
         }else if (s == "f"){
-            int a;
+            std::string a;
             std::cin >> a;
-            std::cout << db.get(a) << std::endl;
+            try{
+               std::cout << db.get(a.c_str()) << std::endl;
+            }catch(std::runtime_error & e){
+               std::cout << e.what() << std::endl;
+            }
         }else if (s == "d"){
-            int a;
+            std::string a;
             std::cin >> a;
-            db.erase(a);
+            db.erase(a.c_str());
         }
     }
     

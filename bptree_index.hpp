@@ -13,19 +13,6 @@ namespace laindb {
     const Address NEW_ENTRY = -1;
 
     /*
-    class IndexStore {
-        public:
-            IndexStore(std::string, FileMode) :rootID(0), table(1){}
-            int alloc() { int res = table.size(); table.resize(res + 1); return res; }
-            BNode * load(int x) { return table[x]; }
-            void write(BNode * node) { table[node->id] = node; }
-            int rootID;
-        private:
-            std::vector<BNode *> table;
-    };
-    */
-
-    /*
      * Class: Bptree Index
      * A implementation of Index using b+tree
      */
@@ -37,7 +24,7 @@ namespace laindb {
             ~BptreeIndex();
             Address get(const Key & key);
             Address put(const Key & key, Address address);
-            void erase(const Key & key) {}
+            void erase(const Key & key);
 
         private:
             //the root of the b+tree, should be in the memory when the database is open
@@ -61,6 +48,42 @@ namespace laindb {
              */
 
             void split(BNode * node, int pos, BNode * left);
+
+            /*
+             * method: replace_key
+             * update keys that has been deleted
+             */
+
+            void replace_key(const Key & origin_key, const Key & new_key);
+
+            /*
+             * method: merge
+             * merge two nodes
+             */
+
+            void merge(BNode * p, int pos, BNode * l, BNode * r);
+
+            /*
+             * method: borrow_from_left
+             * borrow a key from left node
+             */
+
+            void borrow_from_left(BNode * p, int pos, BNode * cur, BNode * l);
+
+            /*
+             * method: borrow_from_right
+             * borrow a key from right node
+             */
+
+            void borrow_from_right(BNode * p, int pos, BNode * cur, BNode * r);
+
+            /*
+             * method: adjust_for_del
+             * adjust the node p->children[pos] for deletion
+             */
+
+            void adjust_for_del(BNode * p, int pos);
+
     };
 
     BptreeIndex::BptreeIndex(const std::string & name, FileMode mode) :store(name, mode)
@@ -227,6 +250,215 @@ namespace laindb {
         }
 
         return res;
+    }
+
+    void BptreeIndex::erase(const Key & key)
+    {
+        if(root == nullptr){
+            return ;
+        }
+
+        BNode * cur = root;
+        while(!cur->is_leaf){
+            int pos = search(cur, key);
+            ++pos;
+            BNode * next = store.load(cur->children[pos]);
+            if(next->num <= MIN_KEYS){
+                store.write(next);
+                adjust_for_del(cur, pos);
+                pos = search(cur, key);
+                ++pos;
+                next = store.load(cur->children[pos]);
+            }
+
+            if (cur != root){
+                store.write(cur);
+            }
+
+            cur = next;
+        }
+
+        int pos = search(cur, key);
+
+        //not found
+        if (pos < 0 || cur->keys[pos] != key){
+            if (cur != root){
+                store.write(cur);
+            }
+            return ;
+        }
+
+        if (pos == 0 && cur->num > 1){
+            replace_key(cur->keys[0], cur->keys[1]);
+        }
+
+        shift(cur->keys + pos, cur->num - pos);
+        shift(cur->children + pos, cur->num - pos);
+        cur->num--;
+        cur->modified = true;
+
+        if (cur != root){
+            store.write(cur);
+        }
+
+        if (root->num == 0){
+            if (root->is_leaf){
+                store.dealloc(root->id);
+                delete root;
+                root = nullptr;
+                store.setRootID(0);
+            }else{
+                BNode * tmp = store.load(root->children[0]);
+                store.dealloc(root->id);
+                delete root;
+                root = tmp;
+                store.setRootID(root->id);
+            }
+        }
+    }
+
+    void BptreeIndex::replace_key(const Key & origin_key, const Key & new_key)
+    {
+        if(root == nullptr){
+            return ;
+        }
+
+        BNode * cur = root;
+        while(!cur->is_leaf){
+            int pos = search(cur, origin_key);
+            if (pos >= 0 && cur->keys[pos] == origin_key){
+                cur->keys[pos] = new_key;
+                cur->modified = true;
+                break;
+            }
+            ++pos;
+            if (cur != root){
+                BNode * tmp = cur;
+                cur = store.load(cur->children[pos]);
+                store.write(tmp);
+            }else{
+                cur = store.load(cur->children[pos]);
+            }
+        }
+
+        if (cur != root){
+            store.write(cur);
+        }
+    }
+
+    void BptreeIndex::adjust_for_del(BNode * p, int pos)
+    {
+        BNode * cur = store.load(p->children[pos]);
+        BNode * l = nullptr;
+        BNode * r = nullptr;
+        if (pos > 0){
+            l = store.load(p->children[pos - 1]);
+        }
+        if (pos < p->num){
+            r = store.load(p->children[pos + 1]);
+        }
+
+        if(l && l->num > MIN_KEYS){
+            borrow_from_left(p, pos, cur, l);
+        }else if (r && r->num > MIN_KEYS){
+            borrow_from_right(p, pos, cur, r);
+        }else if (l){
+            merge(p, pos - 1, l, cur);
+        }else{
+            merge(p, pos, cur, r);
+        }
+
+    }
+
+    void BptreeIndex::merge(BNode * p, int pos, BNode * l, BNode * r)
+    {
+        if (l->is_leaf){
+            shift(p->keys + pos, p->num - pos);
+            shift(p->children + (pos + 1), p->num - pos);
+            p->modified = true;
+            p->num--;
+            item_move(l->keys + l->num, r->keys, r->num);
+            item_move(l->children + l->num, r->children, r->num);
+            l->modified = true;
+            l->num += r->num;
+            store.dealloc(r->id);
+            delete r;
+            store.write(l);
+        }else{
+            l->keys[l->num] = p->keys[pos];
+            l->num++;
+            shift(p->keys + pos, p->num - pos);
+            shift(p->children + (pos + 1), p->num - pos);
+            p->modified = true;
+            p->num--;
+            item_move(l->keys + l->num, r->keys, r->num);
+            item_move(l->children + l->num, r->children, r->num + 1);
+            l->modified = true;
+            l->num += r->num;
+            store.dealloc(r->id);
+            delete r;
+            store.write(l);
+        }
+    }
+
+    void BptreeIndex::borrow_from_left(BNode * p, int pos, BNode * cur, BNode * l)
+    {
+        if(cur->is_leaf){
+            p->keys[pos - 1] = l->keys[l->num - 1];
+            p->modified = true;
+            unshift(cur->keys, cur->num);
+            unshift(cur->children, cur->num);
+            cur->num++;
+            cur->modified = true;
+            cur->keys[0] = l->keys[l->num - 1];
+            cur->children[0] = l->children[l->num - 1];
+            l->num--;
+            l->modified = true;
+        }else{
+            unshift(cur->keys, cur->num);
+            unshift(cur->children, cur->num + 1);
+            cur->num++;
+            cur->modified = true;
+            cur->keys[0] = p->keys[pos - 1];
+            p->keys[pos - 1] = l->keys[l->num - 1];
+            p->modified = true;
+            cur->children[0] = l->children[l->num];
+            l->num--;
+            l->modified = true;
+        }
+
+        store.write(l);
+        store.write(cur);
+    }
+
+    void BptreeIndex::borrow_from_right(BNode * p, int pos, BNode * cur, BNode * r)
+    {
+        if(cur->is_leaf){
+            cur->keys[cur->num] = r->keys[0];
+            cur->children[cur->num] = r->children[0];
+            cur->num++;
+            cur->modified = true;
+            shift(r->keys, r->num);
+            shift(r->children, r->num);
+            r->num--;
+            r->modified = true;
+            p->keys[pos] = r->keys[0];
+            p->modified = true;
+        }else{
+            cur->keys[cur->num] = p->keys[pos];
+            p->keys[pos] = r->keys[0];
+            cur->children[cur->num + 1] = r->children[0];
+            shift(r->keys, r->num);
+            shift(r->children, r->num + 1);
+            cur->num++;
+            cur->modified = true;
+            p->modified = true;
+            r->num--;
+            r->modified = true;
+        }
+
+        store.write(r);
+        store.write(cur);
     }
 
 }

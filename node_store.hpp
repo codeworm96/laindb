@@ -53,6 +53,7 @@ namespace laindb {
             /*
              * method: write
              * write a node to disk
+             * Side effect: node will be deleted
              */
 
             void write(BNode * node);
