@@ -8,6 +8,7 @@
 #endif
 
 #include <string>
+#include <stdexcept>
 
 #include "key_type.h"
 #include "bytes.h"
@@ -102,6 +103,9 @@ namespace laindb {
 #endif
 
         Address address = index.get(make_key(key));
+        if (address == ENTRY_NOT_FOUND){
+            throw std::runtime_error("not found");
+        }
         Bytes raw = data.load(address);
         Value res = ValueSerializer::deserialize(raw);
         std::free(raw.raw);
@@ -123,7 +127,7 @@ namespace laindb {
         Bytes raw = ValueSerializer::serialize(value);
         Address address = data.store(raw);
         Address old_addr = index.put(make_key(key), address);
-        if (old_addr != NEW_ENTRY){
+        if (old_addr != ENTRY_NOT_FOUND){
             data.free(old_addr);
         }
 
@@ -139,9 +143,10 @@ namespace laindb {
         int START = std::clock();
 #endif
 
-        Address address = index.get(make_key(key));
-        index.erase(make_key(key));
-        data.free(address);
+        Address address = index.erase(make_key(key));
+        if (address != ENTRY_NOT_FOUND){
+            data.free(address);
+        }
 
 #ifdef BENCHMARK
         int END = std::clock();

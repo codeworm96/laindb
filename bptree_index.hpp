@@ -10,7 +10,7 @@
 
 namespace laindb {
 
-    const Address NEW_ENTRY = -1;
+    const Address ENTRY_NOT_FOUND = -1;
 
     /*
      * Class: Bptree Index
@@ -24,7 +24,7 @@ namespace laindb {
             ~BptreeIndex();
             Address get(const Key & key);
             Address put(const Key & key, Address address);
-            void erase(const Key & key);
+            Address erase(const Key & key);
 
         private:
             //the root of the b+tree, should be in the memory when the database is open
@@ -45,9 +45,10 @@ namespace laindb {
             /*
              * method: split
              * split children[pos] of node
+             * return: the splited node that contains key
              */
 
-            void split(BNode * node, int pos, BNode * left);
+            BNode * split(BNode * node, const Key & key, int pos, BNode * left);
 
             /*
              * method: replace_key
@@ -123,7 +124,7 @@ namespace laindb {
     Address BptreeIndex::get(const Key & key)
     {
         if(root == nullptr){
-            throw std::runtime_error("not found");
+            return ENTRY_NOT_FOUND;
         }
 
         BNode * cur = root;
@@ -142,7 +143,7 @@ namespace laindb {
         int pos = search(cur, key);
 
         if (pos < 0 || cur->keys[pos] != key){
-            throw std::runtime_error("not found");
+            return ENTRY_NOT_FOUND;
         }
 
         Address res = cur->children[pos];
@@ -154,14 +155,15 @@ namespace laindb {
         return res;
     }
 
-    void BptreeIndex::split(BNode * node, int pos, BNode * left)
+    BNode * BptreeIndex::split(BNode * node, const Key & key, int pos, BNode * left)
     {
         //point arithmetic
         unshift(node->keys + pos, node->num - pos);
         unshift(node->children + (pos + 1), node->num - pos);
-        node->modified = true;
 
+        node->modified = true;
         node->num++;
+
         BNode * right = new BNode;
         right->id = store.alloc();
         right->modified = true;
@@ -183,7 +185,13 @@ namespace laindb {
         left->num = MIN_KEYS;
         left->modified = true;
 
-        store.write(right);
+        if(key < node->keys[pos]){
+            store.write(right);
+            return left;
+        }else{
+            store.write(left);
+            return right;
+        }
     }
 
     Address BptreeIndex::put(const Key & key, Address address)
@@ -197,6 +205,8 @@ namespace laindb {
             root->num = 0;
         }
 
+        BNode * cur = root;
+
         if(root->num == MAX_KEYS){
             BNode * old_root = root;
             root = new BNode;
@@ -206,21 +216,15 @@ namespace laindb {
             root->is_leaf = false;
             root->num = 0;
             root->children[0] = old_root->id; 
-            split(root, 0, old_root);
-            store.write(old_root);
+            cur = split(root, key, 0, old_root);
         }
 
-        BNode * cur = root;
         while(!cur->is_leaf){
             int pos = search(cur, key);
             ++pos;
             BNode * next = store.load(cur->children[pos]);
             if (next->num >= MAX_KEYS){
-                split(cur, pos, next);
-                store.write(next);
-                pos = search(cur, key);
-                ++pos;
-                next = store.load(cur->children[pos]);
+                next = split(cur, key, pos, next);
             }
             
             if (cur != root){
@@ -231,7 +235,7 @@ namespace laindb {
         }
 
         int pos = search(cur, key);
-        Address res = NEW_ENTRY;
+        Address res = ENTRY_NOT_FOUND;
         if (pos >= 0 && cur->keys[pos] == key){
             res = cur->children[pos];
             cur->children[pos] = address;
@@ -252,10 +256,10 @@ namespace laindb {
         return res;
     }
 
-    void BptreeIndex::erase(const Key & key)
+    Address BptreeIndex::erase(const Key & key)
     {
         if(root == nullptr){
-            return ;
+            return ENTRY_NOT_FOUND;
         }
 
         BNode * cur = root;
@@ -285,12 +289,14 @@ namespace laindb {
             if (cur != root){
                 store.write(cur);
             }
-            return ;
+            return ENTRY_NOT_FOUND;
         }
 
         if (pos == 0 && cur->num > 1){
             replace_key(cur->keys[0], cur->keys[1]);
         }
+
+        int res = cur->children[pos];
 
         shift(cur->keys + pos, cur->num - pos);
         shift(cur->children + pos, cur->num - pos);
@@ -315,6 +321,8 @@ namespace laindb {
                 store.setRootID(root->id);
             }
         }
+
+        return res;
     }
 
     void BptreeIndex::replace_key(const Key & origin_key, const Key & new_key)
