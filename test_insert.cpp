@@ -7,7 +7,7 @@
 #include "database.hpp"
 #include "utility.h"
 
-const int NREC = 100000;
+const int NREC = 1000000;
 
 std::string itos(int x)
 {

@@ -190,7 +190,7 @@ namespace laindb {
         Block * tmp = new Block(0, 0, list);
         Block * p = tmp;
         while(true){
-            if (p->next == nullptr || blk->size < p->next->size){
+            if (p->next == nullptr || blk->size <= p->next->size){
                 blk->next = p->next;
                 p->next = blk;
                 break;
