@@ -19,7 +19,7 @@
 
 namespace laindb {
 
-    /*
+    /**
      * Class: Database:
      * It is the class that represents the whole database.
      * It provides users interfaces to operate the database.
@@ -34,24 +34,26 @@ namespace laindb {
     class Database {
         public:
 
-            /*
+            /**
              * Constructor
              * Should open a database which name is `name`
-             * using mode `mode`
+             * using mode `mode` (default: CREATE)
              */
 
             Database(const std::string & name, FileMode mode = CREATE);
 
-            /*
+            /**
              * Method: get
              * Fetch the value from the data file according to the key
              */
+            //TODO: when fails?
 
             Value get(const char * key);
 
             /*
              * Method: put
              * Put a pair of key/value into the database
+             * if the key exists, overwrites the value.
              */
 
             void put(const char * key, const Value & value);
@@ -59,6 +61,7 @@ namespace laindb {
             /*
              * Method: erase
              * Erase a key/value pair from the database accoring to the key
+             * if the key does not exist, do nothing.
              */
 
             void erase(const char * key);
@@ -87,7 +90,8 @@ namespace laindb {
 
     };
 
-    Database::Database(const std::string & name, FileMode mode) :_name(name), data(name + std::string(".dat"), mode), index(name + std::string(".idx"), mode) 
+    Database::Database(const std::string & name, FileMode mode) 
+        :_name(name), data(name + std::string(".dat"), mode), index(name + std::string(".idx"), mode) 
     {
 #ifdef BENCHMARK
         TIME = 0;
@@ -108,7 +112,6 @@ namespace laindb {
         }
         Bytes raw = data.load(address);
         Value res = ValueSerializer::deserialize(raw);
-        std::free(raw.raw);
 
 #ifdef BENCHMARK
         int END = std::clock();

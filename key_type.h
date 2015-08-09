@@ -49,8 +49,14 @@ namespace laindb {
 
     inline bool operator!=(Key k1, Key k2)
     {
-        return (std::strcmp(k1.content, k2.content) != 0);
+        return std::strcmp(k1.content, k2.content);
     }
+
+    /**
+     * function: make_key
+     * convert a c style string to Key
+     * throws when fails.
+     */
 
     inline Key make_key(const char * str)
     {
@@ -63,6 +69,5 @@ namespace laindb {
         }
     }
 }
-
 
 #endif //LAINDB_KEY_TYPE_H_

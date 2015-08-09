@@ -12,7 +12,7 @@ namespace laindb {
 
     const Address ENTRY_NOT_FOUND = -1;
 
-    /*
+    /**
      * Class: Bptree Index
      * A implementation of Index using b+tree
      */
@@ -20,10 +20,38 @@ namespace laindb {
     class BptreeIndex{
         public:
 
+            /**
+             * constructor
+             * construct a b+tree index using name & mode (default CREATE)
+             */
+
             BptreeIndex(const std::string & name, FileMode mode = CREATE);
+            
+            //destructor
             ~BptreeIndex();
+
+            /**
+             * methdod: get
+             * get address according to the key
+             * returns ENTRY_NOT_FOUND if not found
+             */
+
             Address get(const Key & key);
+
+            /**
+             * method: put
+             * put a key/value pair
+             * returns the old value, returns ENTRY_NOT_FOUND if key does not exist
+             */
+
             Address put(const Key & key, Address address);
+
+            /**
+             * method: erase
+             * erase a key/value pair
+             * returns the old value, returns ENTRY_NOT_FOUND if key does not exitst
+             */
+
             Address erase(const Key & key);
 
         private:
@@ -37,7 +65,7 @@ namespace laindb {
              * method: search
              * search x in the keys
              * if found, returns the index
-             * if not found, returns the index of the biggest key that is less than x (if there is not, returns -1)
+             * if not found, returns the index of the biggest key that is less than x (if does not exist, returns -1)
              */
 
             int search(BNode * node, const Key & x);
@@ -45,6 +73,7 @@ namespace laindb {
             /*
              * method: split
              * split children[pos] of node
+             * left: children[pos]
              * return: the splited node that contains key
              */
 
@@ -60,30 +89,34 @@ namespace laindb {
             /*
              * method: merge
              * merge two nodes
+             * return: merged node
              */
 
-            void merge(BNode * p, int pos, BNode * l, BNode * r);
+            BNode * merge(BNode * p, int pos, BNode * l, BNode * r);
 
             /*
              * method: borrow_from_left
              * borrow a key from left node
+             * return: the node that get one key
              */
 
-            void borrow_from_left(BNode * p, int pos, BNode * cur, BNode * l);
+            BNode * borrow_from_left(BNode * p, int pos, BNode * cur, BNode * l);
 
             /*
              * method: borrow_from_right
              * borrow a key from right node
+             * return: the node that get one key
              */
 
-            void borrow_from_right(BNode * p, int pos, BNode * cur, BNode * r);
+            BNode * borrow_from_right(BNode * p, int pos, BNode * cur, BNode * r);
 
             /*
              * method: adjust_for_del
              * adjust the node p->children[pos] for deletion
+             * return: the node that adjusted
              */
 
-            void adjust_for_del(BNode * p, int pos);
+            BNode * adjust_for_del(BNode * p, int pos, BNode * cur);
 
     };
 
@@ -106,6 +139,7 @@ namespace laindb {
 
     int BptreeIndex::search(BNode * node, const Key & x)
     {
+        //binary search
         int r = node->num - 1;
         int l = 0;
         while(l <= r){
@@ -142,11 +176,12 @@ namespace laindb {
 
         int pos = search(cur, key);
 
+        Address res;
         if (pos < 0 || cur->keys[pos] != key){
-            return ENTRY_NOT_FOUND;
+            res =  ENTRY_NOT_FOUND;
+        }else{
+            res = cur->children[pos];
         }
-
-        Address res = cur->children[pos];
 
         if (cur != root){
             store.write(cur);
@@ -268,11 +303,7 @@ namespace laindb {
             ++pos;
             BNode * next = store.load(cur->children[pos]);
             if(next->num <= MIN_KEYS){
-                store.write(next);
-                adjust_for_del(cur, pos);
-                pos = search(cur, key);
-                ++pos;
-                next = store.load(cur->children[pos]);
+                next = adjust_for_del(cur, pos, next);
             }
 
             if (cur != root){
@@ -354,9 +385,9 @@ namespace laindb {
         }
     }
 
-    void BptreeIndex::adjust_for_del(BNode * p, int pos)
+    BNode * BptreeIndex::adjust_for_del(BNode * p, int pos, BNode * cur)
     {
-        BNode * cur = store.load(p->children[pos]);
+        //BNode * cur = store.load(p->children[pos]);
         BNode * l = nullptr;
         BNode * r = nullptr;
         if (pos > 0){
@@ -366,19 +397,33 @@ namespace laindb {
             r = store.load(p->children[pos + 1]);
         }
 
+        BNode * res = nullptr;
         if(l && l->num > MIN_KEYS){
-            borrow_from_left(p, pos, cur, l);
-        }else if (r && r->num > MIN_KEYS){
-            borrow_from_right(p, pos, cur, r);
-        }else if (l){
-            merge(p, pos - 1, l, cur);
-        }else{
-            merge(p, pos, cur, r);
+            if(r){
+                store.write(r);
+            }
+            res = borrow_from_left(p, pos, cur, l);
+        } else if (r && r->num > MIN_KEYS){
+            if(l){
+                store.write(l);
+            }
+            res = borrow_from_right(p, pos, cur, r);
+        } else if (l){
+            if (r){
+                store.write(r);
+            }
+            res = merge(p, pos - 1, l, cur);
+        } else {
+            if (l){
+                store.write(l);
+            }
+            res = merge(p, pos, cur, r);
         }
 
+        return res;
     }
 
-    void BptreeIndex::merge(BNode * p, int pos, BNode * l, BNode * r)
+    BNode * BptreeIndex::merge(BNode * p, int pos, BNode * l, BNode * r)
     {
         if (l->is_leaf){
             shift(p->keys + pos, p->num - pos);
@@ -389,9 +434,6 @@ namespace laindb {
             item_move(l->children + l->num, r->children, r->num);
             l->modified = true;
             l->num += r->num;
-            store.dealloc(r->id);
-            delete r;
-            store.write(l);
         }else{
             l->keys[l->num] = p->keys[pos];
             l->num++;
@@ -403,13 +445,13 @@ namespace laindb {
             item_move(l->children + l->num, r->children, r->num + 1);
             l->modified = true;
             l->num += r->num;
-            store.dealloc(r->id);
-            delete r;
-            store.write(l);
         }
+        store.dealloc(r->id);
+        delete r;
+        return l;
     }
 
-    void BptreeIndex::borrow_from_left(BNode * p, int pos, BNode * cur, BNode * l)
+    BNode * BptreeIndex::borrow_from_left(BNode * p, int pos, BNode * cur, BNode * l)
     {
         if(cur->is_leaf){
             p->keys[pos - 1] = l->keys[l->num - 1];
@@ -436,10 +478,10 @@ namespace laindb {
         }
 
         store.write(l);
-        store.write(cur);
+        return cur;
     }
 
-    void BptreeIndex::borrow_from_right(BNode * p, int pos, BNode * cur, BNode * r)
+    BNode * BptreeIndex::borrow_from_right(BNode * p, int pos, BNode * cur, BNode * r)
     {
         if(cur->is_leaf){
             cur->keys[cur->num] = r->keys[0];
@@ -456,20 +498,19 @@ namespace laindb {
             cur->keys[cur->num] = p->keys[pos];
             p->keys[pos] = r->keys[0];
             cur->children[cur->num + 1] = r->children[0];
-            shift(r->keys, r->num);
-            shift(r->children, r->num + 1);
             cur->num++;
             cur->modified = true;
             p->modified = true;
+            shift(r->keys, r->num);
+            shift(r->children, r->num + 1);
             r->num--;
             r->modified = true;
         }
 
         store.write(r);
-        store.write(cur);
+        return cur;
     }
 
 }
-
 
 #endif //LAINDB_BPTREE_INDEX_HPP_

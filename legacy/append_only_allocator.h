@@ -1,11 +1,11 @@
 #ifndef LAINDB_APPEND_ONLY_ALLOCATOR_H_ 
 #define LAINDB_APPEND_ONLY_ALLOCATOR_H_
 
+#include "utility.h"
+
 namespace laindb {
 
-    typedef int Address;
-
-    /*
+    /**
      * class: AppendOnlyAllocator
      * An allocator that simply append data to the end of file.
      */
@@ -13,7 +13,7 @@ namespace laindb {
     class AppendOnlyAllocator {
         public:
 
-            /*
+            /**
              * Constructor
              * construct a allocator
              * using name & mode
@@ -21,13 +21,10 @@ namespace laindb {
 
             AppendOnlyAllocator(const std::string & name, FileMode mode);
 
-            /*
-             * Destructor
-             */
-
+            //Destructor
             ~AppendOnlyAllocator();
 
-            /*
+            /**
              * method: alloc
              * allocate a block of size s
              * @return: the address of the block
@@ -35,7 +32,7 @@ namespace laindb {
 
             Address alloc(int16_t s) { Address res = size; size += s; return res; }
             
-            /*
+            /**
              * method: dealloc
              * free a block
              */
@@ -49,23 +46,21 @@ namespace laindb {
             std::string _name;
     };
 
-    AppendOnlyAllocator::AppendOnlyAllocator(const std::string & name, FileMode mode):_name(name)
+    AppendOnlyAllocator::AppendOnlyAllocator(const std::string & name, FileMode mode):_name(name), size(0)
     {
         if(mode & OPEN){
             FILE * idle_file = std::fopen(name.c_str(), "rb");
             if (idle_file){
-                std::fread(&size, sizeof size, 1, idle_file); //load size
+                std::fread(&size, sizeof(size), 1, idle_file); //load size
                 fclose(idle_file);
-                return;
             }
         }
-        size = 0;
     }
 
     AppendOnlyAllocator::~AppendOnlyAllocator()
     {
         FILE * idle_file = std::fopen(_name.c_str(), "wb");
-        std::fwrite(&size, sizeof size, 1, idle_file); //write size
+        std::fwrite(&size, sizeof(size), 1, idle_file); //write size
         fclose(idle_file);
     }
 }

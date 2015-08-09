@@ -5,8 +5,11 @@
 
 namespace laindb {
 
-    /* 
-     * Type: FileMode
+    //type alias for Address
+    typedef int Address;
+
+    /** 
+     * enum: FileMode
      * used to represent options of opening a database file
      */
 
@@ -16,7 +19,7 @@ namespace laindb {
         CREATE = 3 //try to open first. If it fails, create a new file
     };
 
-    /*
+    /**
      * Function template: shift
      * (left) shift a array of length `len`
      */
@@ -28,7 +31,7 @@ namespace laindb {
         }
     }
 
-    /*
+    /**
      * Function template: unshift
      * (right) shift a array of length `len`
      */
@@ -40,7 +43,7 @@ namespace laindb {
         }
     }
 
-    /*
+    /**
      * Function template: item_move
      * move `num` items from source to dest
      */

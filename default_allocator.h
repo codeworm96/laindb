@@ -3,11 +3,11 @@
 
 #include <cstdint>
 
+#include "utility.h"
+
 namespace laindb {
 
-    typedef int Address;
-
-    /*
+    /**
      * struct: Block
      * represents a block in file
      */
@@ -24,10 +24,8 @@ namespace laindb {
 
         Block(Address pos, int16_t s, Block * p):addr(pos), size(s), next(p) {}
     };
-        
 
-
-    /*
+    /**
      * class: DefaultAllocator
      * An allocator using bestfit strategy.
      */
@@ -35,7 +33,7 @@ namespace laindb {
     class DefaultAllocator {
         public:
 
-            /*
+            /**
              * Constructor
              * construct a allocator
              * using name & mode
@@ -43,13 +41,13 @@ namespace laindb {
 
             DefaultAllocator(const std::string & name, FileMode mode);
 
-            /*
+            /**
              * Destructor
              */
 
             ~DefaultAllocator();
 
-            /*
+            /**
              * method: alloc
              * allocate a block of size s
              * @return: the address of the block
@@ -57,7 +55,7 @@ namespace laindb {
 
             Address alloc(int16_t s);
             
-            /*
+            /**
              * method: dealloc
              * free a block
              */
@@ -94,17 +92,17 @@ namespace laindb {
         if(mode & OPEN){
             FILE * idle_file = std::fopen(name.c_str(), "rb");
             if (idle_file){
-                std::fread(&size, sizeof size, 1, idle_file); //load size
+                std::fread(&size, sizeof(size), 1, idle_file); //load size
                 int cnt;
-                std::fread(&cnt, sizeof cnt, 1, idle_file); //load length of the list
+                std::fread(&cnt, sizeof(cnt), 1, idle_file); //load length of the list
+                int pos;
+                int s;
                 for (int i = 0; i < cnt; ++i){
-                    int pos;
-                    int s;
-                    std::fread(&pos, sizeof pos, 1, idle_file); //load pos
-                    std::fread(&s, sizeof s, 1, idle_file); //load size of the block
+                    std::fread(&pos, sizeof(pos), 1, idle_file); //load pos
+                    std::fread(&s, sizeof(s), 1, idle_file); //load size of the block
                     avail = new Block(pos, s, avail);
-                    reverse(avail); //make the list in correct order
                 }
+                reverse(avail); //make the list in correct order
                 fclose(idle_file);
             }
         }
@@ -113,15 +111,15 @@ namespace laindb {
     DefaultAllocator::~DefaultAllocator()
     {
         FILE * idle_file = std::fopen(_name.c_str(), "wb");
-        std::fwrite(&size, sizeof size, 1, idle_file); //write size
+        std::fwrite(&size, sizeof(size), 1, idle_file); //write size
         int cnt = length(avail);
-        std::fwrite(&cnt, sizeof cnt, 1, idle_file); //write the length of the list
+        std::fwrite(&cnt, sizeof(cnt), 1, idle_file); //write the length of the list
         Block * p = avail;
         while(p){
             int pos = p->addr;
             int s = p->size;
-            std::fwrite(&pos, sizeof pos, 1, idle_file); //write address
-            std::fwrite(&s, sizeof s, 1, idle_file); //write size
+            std::fwrite(&pos, sizeof(pos), 1, idle_file); //write address
+            std::fwrite(&s, sizeof(s), 1, idle_file); //write size
             Block * tmp = p;
             p = p->next;
             delete tmp;

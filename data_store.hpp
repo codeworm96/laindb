@@ -14,10 +14,9 @@
 namespace laindb {
 
     //NOTE: use typedef instead of template parameters now
-    typedef int Address;
     typedef DefaultAllocator Allocator;
 
-    /*
+    /**
      * Class: DataStore
      * In change of storing the values
      */
@@ -25,7 +24,7 @@ namespace laindb {
     class DataStore{
         public:
 
-            /*
+            /**
              * Constructor:
              * Construct a data store.
              * name: name of the file
@@ -34,21 +33,21 @@ namespace laindb {
 
             DataStore(const std::string & name, FileMode mode);
 
-            /*
+            /**
              * Destructor
              * close data store
              */
 
             ~DataStore();
 
-            /*
+            /**
              * method: load
              * load data from file
              */
 
             Bytes load(Address address);
 
-            /*
+            /**
              * method: store
              * store data into file
              * Side effect: after the call the raw will be invalid
@@ -57,7 +56,7 @@ namespace laindb {
             Address store(Bytes & raw);
 
 
-            /*
+            /**
              * method: free
              * free a block
              */
@@ -99,7 +98,7 @@ namespace laindb {
     {
         Bytes res;
         std::fseek(data_file, address, SEEK_SET);
-        std::fread(&res.size, sizeof res.size, 1, data_file); //load size
+        std::fread(&res.size, sizeof(res.size), 1, data_file); //load size
         res.raw = std::malloc(res.size);
         std::fread(res.raw, res.size, 1, data_file); //load the byte string
         return res;
@@ -107,10 +106,11 @@ namespace laindb {
 
     Address DataStore::store(Bytes & raw)
     {
-        Address res = allocator->alloc(raw.size + sizeof raw.size);
+        Address res = allocator->alloc(sizeof(raw.size) + raw.size);
         std::fseek(data_file, res, SEEK_SET);
-        std::fwrite(&raw.size, sizeof raw.size, 1, data_file); //store size
+        std::fwrite(&raw.size, sizeof(raw.size), 1, data_file); //store size
         std::fwrite(raw.raw, raw.size, 1, data_file); //store the byte string
+
         //free
         std::free(raw.raw);
         raw.raw = nullptr;
@@ -122,10 +122,9 @@ namespace laindb {
     {
         int16_t size;
         std::fseek(data_file, address, SEEK_SET);
-        std::fread(&size, sizeof size, 1, data_file); //load size
-        allocator->dealloc(address, size + sizeof size);
+        std::fread(&size, sizeof(size), 1, data_file); //load size
+        allocator->dealloc(address, sizeof(size) + size);
     }
 }
-
 
 #endif //LAINDB_DATASTORE_HPP_

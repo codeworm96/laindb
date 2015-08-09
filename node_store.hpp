@@ -9,16 +9,15 @@
 
 #include "bptree_index.hpp"
 #include "utility.h"
-#include "bytes.h"
-#include "default_serializer.hpp"
 
 namespace laindb {
 
+    //block size of the disk
     const int BLOCK_SIZE = 4096;
 
     const char ZERO = 0;
 
-    /*
+    /**
      * class: NodeStore
      * store BNodes in a file
      */
@@ -26,9 +25,10 @@ namespace laindb {
     class NodeStore {
         public:
 
-            /*
+            /**
              * constructor
              * construct a node store
+             * using name `file_name` & mode
              */
 
             NodeStore(std::string file_name, FileMode mode);
@@ -36,16 +36,16 @@ namespace laindb {
             //destructor
             ~NodeStore();
 
-            /*
+            /**
              * method: alloc
              * allocate a block for use
              */
 
             int alloc();
             
-            /*
+            /**
              * method: dealloc
-             * deallocate a ablock;
+             * deallocate a block;
              */
 
             void dealloc(int id);
@@ -96,7 +96,7 @@ namespace laindb {
             int rootID;
     };
 
-    NodeStore::NodeStore(std::string file_name, FileMode mode) :name(file_name), file(nullptr), size(0)
+    NodeStore::NodeStore(std::string file_name, FileMode mode) :name(file_name), file(nullptr), size(0), rootID(0)
     {
         std::string idle_name = std::string("idle_") + name;
         if(mode & OPEN){
@@ -105,15 +105,14 @@ namespace laindb {
         if(file){
             FILE * idle_file = std::fopen(idle_name.c_str(), "rb");
             if (idle_file){
-                std::fread(&rootID, sizeof rootID, 1, file);
-                std::cout << rootID << std::endl;
-                std::fread(&size, sizeof size, 1, file);
-                std::cout << size << std::endl;
+                std::fread(&rootID, sizeof(rootID), 1, file);
+                std::fread(&size, sizeof(size), 1, file);
+
                 int num;
-                std::fread(&num, sizeof num, 1, idle_file);
+                std::fread(&num, sizeof(num), 1, idle_file);
+                int t;
                 for (int i = 0; i < num; ++i){
-                    int t;
-                    std::fread(&t, sizeof t, 1, idle_file);
+                    std::fread(&t, sizeof(t), 1, idle_file);
                     blocks.push_back(t);
                 }
                 std::fclose(idle_file);
@@ -123,11 +122,9 @@ namespace laindb {
         }else{
             if (mode & NEW){
                 file = std::fopen(name.c_str(), "w+b");
+                std::fwrite(&ZERO, sizeof(ZERO), BLOCK_SIZE, file); //write the first block
             }
-            if (file){
-                rootID = 0;
-                size = 0;
-            }else{
+            if (!file){
                 throw std::runtime_error("error when opening index file");
             }
         }
@@ -137,15 +134,15 @@ namespace laindb {
     {
         std::string idle_name = std::string("idle_") + name;
         std::fseek(file, 0, SEEK_SET);
-        std::fwrite(&rootID, sizeof rootID, 1, file);
-        std::fwrite(&size, sizeof size, 1, file);
+        std::fwrite(&rootID, sizeof(rootID), 1, file);
+        std::fwrite(&size, sizeof(size), 1, file);
         std::fclose(file);
 
         FILE * idle_file = std::fopen(idle_name.c_str(), "wb");
         int num = blocks.size();
-        std::fwrite(&num, sizeof num, 1, idle_file); 
+        std::fwrite(&num, sizeof(num), 1, idle_file); 
         for (int i = 0; i < num; ++i){
-            std::fwrite(&blocks[i], sizeof blocks[i], 1, idle_file);
+            std::fwrite(&blocks[i], sizeof(blocks[i]), 1, idle_file);
         }
         std::fclose(idle_file);
     }
@@ -155,7 +152,7 @@ namespace laindb {
         if(blocks.empty()){
             ++size;
             std::fseek(file, BLOCK_SIZE * size, SEEK_SET);
-            std::fwrite(&ZERO, sizeof ZERO, BLOCK_SIZE, file);
+            std::fwrite(&ZERO, sizeof(ZERO), BLOCK_SIZE, file);
             return size;
         }else{
             int res = blocks.back();
@@ -182,7 +179,7 @@ namespace laindb {
         cur += sizeof(node->num);
         std::memcpy(cur, &node->is_leaf, sizeof(node->is_leaf));
         cur += sizeof(node->is_leaf);
-        std::memcpy(cur, &node->keys, sizeof(Key) * node->num);
+        std::memcpy(cur, node->keys, sizeof(Key) * node->num);
         cur += sizeof(Key) * node->num;
 
         int num = node->num;
@@ -190,7 +187,7 @@ namespace laindb {
             num++;
         }
 
-        std::memcpy(cur, &node->children, sizeof(Address) * num);
+        std::memcpy(cur, node->children, sizeof(Address) * num);
 
         std::fseek(file, BLOCK_SIZE * node->id, SEEK_SET);
         std::fwrite(raw, BLOCK_SIZE, 1, file);
@@ -213,7 +210,7 @@ namespace laindb {
         cur += sizeof(res->num);
         std::memcpy(&res->is_leaf, cur, sizeof(res->is_leaf));
         cur += sizeof(res->is_leaf);
-        std::memcpy(&res->keys, cur, sizeof(Key) * res->num);
+        std::memcpy(res->keys, cur, sizeof(Key) * res->num);
         cur += sizeof(Key) * res->num;
 
         int num = res->num;
@@ -221,7 +218,7 @@ namespace laindb {
             num++;
         }
 
-        std::memcpy(&res->children, cur, sizeof(Address) * num);
+        std::memcpy(res->children, cur, sizeof(Address) * num);
 
         std::free(raw);
         return res;

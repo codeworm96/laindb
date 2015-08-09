@@ -2,6 +2,7 @@
 #define LAINDB_BNODE_H_
 
 #include "key_type.h"
+#include "utility.h"
 
 namespace laindb {
 
@@ -10,10 +11,7 @@ namespace laindb {
     //the maximum # of keys in a node
     const int MAX_KEYS = MIN_KEYS * 2 + 1;
     
-    //NOTE: use typedef instead of template parameters now
-    typedef int Address;
-    
-    /*
+    /**
      * Struct: BNode
      * A node of the b+tree
      */
@@ -26,6 +24,7 @@ namespace laindb {
 
         //the keys
         Key keys[MAX_KEYS];
+
         //Note: in a inner node it represents subtrees
         //in a leaf, children[i] is the value that is associated with keys[i]
         Address children[MAX_KEYS + 1];
