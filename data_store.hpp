@@ -106,11 +106,14 @@ namespace laindb {
 
     Address DataStore::store(Bytes & raw)
     {
+        char * buf = static_cast<char *>(std::malloc(sizeof(raw.size) + raw.size));
+        std::memcpy(buf, &raw.size, sizeof(raw.size));
+        std::memcpy(buf + sizeof(raw.size), raw.raw, raw.size);
         Address res = allocator->alloc(sizeof(raw.size) + raw.size);
         std::fseek(data_file, res, SEEK_SET);
-        std::fwrite(&raw.size, sizeof(raw.size), 1, data_file); //store size
-        std::fwrite(raw.raw, raw.size, 1, data_file); //store the byte string
+        std::fwrite(buf, sizeof(raw.size) + raw.size, 1, data_file); //store
 
+        std::free(buf);
         //free
         std::free(raw.raw);
         raw.raw = nullptr;

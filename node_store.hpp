@@ -15,8 +15,6 @@ namespace laindb {
     //block size of the disk
     const int BLOCK_SIZE = 4096;
 
-    const char ZERO = 0;
-
     /**
      * class: NodeStore
      * store BNodes in a file
@@ -122,7 +120,6 @@ namespace laindb {
         }else{
             if (mode & NEW){
                 file = std::fopen(name.c_str(), "w+b");
-                std::fwrite(&ZERO, sizeof(ZERO), BLOCK_SIZE, file); //write the first block
             }
             if (!file){
                 throw std::runtime_error("error when opening index file");
@@ -150,10 +147,7 @@ namespace laindb {
     int NodeStore::alloc()
     {
         if(blocks.empty()){
-            ++size;
-            std::fseek(file, BLOCK_SIZE * size, SEEK_SET);
-            std::fwrite(&ZERO, sizeof(ZERO), BLOCK_SIZE, file);
-            return size;
+            return ++size;
         }else{
             int res = blocks.back();
             blocks.pop_back();
