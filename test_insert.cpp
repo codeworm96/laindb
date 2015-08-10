@@ -38,14 +38,15 @@ int main()
         }
         std::cout << "fetch " << NREC << " " << db.TIME / static_cast<double>(CLOCKS_PER_SEC) << "s" << std::endl;
     }
-
+/*
     //step 3 delete
     {
         laindb::Database db("123", laindb::OPEN);
-        for (int i = NREC - 1; i >= 0; --i){
+        for (int i = 0; i < NREC; ++i){
             db.erase(itos(i).c_str());
         }
         std::cout << "erase " << NREC << " " << db.TIME / static_cast<double>(CLOCKS_PER_SEC) << "s" << std::endl;
     }
+    */
     
 }

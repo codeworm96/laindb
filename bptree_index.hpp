@@ -5,7 +5,7 @@
 
 #include "utility.h"
 #include "bnode.h"
-#include "node_store.hpp"
+#include "cache.hpp"
 
 
 namespace laindb {
@@ -59,7 +59,7 @@ namespace laindb {
             BNode * root;
 
             //to store the nodes
-            NodeStore store;
+            Cache store;
 
             /*
              * method: search
@@ -165,13 +165,11 @@ namespace laindb {
         while(!cur->is_leaf){
             int pos = search(cur, key);
             ++pos;
+            BNode * next = store.load(cur->children[pos]);
             if (cur != root){
-                BNode * tmp = cur;
-                cur = store.load(cur->children[pos]);
-                store.write(tmp);
-            }else{
-                cur = store.load(cur->children[pos]);
+                store.write(cur);
             }
+            cur = next;
         }
 
         int pos = search(cur, key);
