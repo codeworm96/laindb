@@ -8,7 +8,7 @@
 
 namespace laindb {
 
-    const int CACHE_SIZE = 1000;
+    const int CACHE_SIZE = 1543;
 
     /**
      * struct: Page
@@ -49,14 +49,21 @@ namespace laindb {
              * from `address` read `cnt` bytes to `buf`
              */
 
-            void read(char * buf, int cnt, Address address);
+            void read(void * buf, int cnt, Address address);
 
             /**
              * method: write 
              * write `cnt` bytes from `buf` to file at `address`
              */
 
-            void write(char * buf, int cnt, Address address);
+            void write(void * buf, int cnt, Address address);
+
+            /**
+             * method: status
+             * returns the status of the file
+             */
+
+            FileMode status() { return _status; }
 
         private:
             //the file that the object manages
@@ -64,6 +71,9 @@ namespace laindb {
 
             //cache
             Page * cache[CACHE_SIZE];
+
+            //status of the file
+            FileMode _status;
 
             void init_cache();
 

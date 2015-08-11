@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <stdexcept>
 
+#include "pager.h"
 #include "bytes.h"
 #include "utility.h"
 #include "default_allocator.h"
@@ -64,56 +65,37 @@ namespace laindb {
             void free(Address address);
 
         private:
-            FILE * data_file;
+            Pager data_pager;
             Allocator * allocator;
     };
 
-    DataStore::DataStore(const std::string & name, FileMode mode) :data_file(nullptr), allocator(nullptr)
+    DataStore::DataStore(const std::string & name, FileMode mode) :data_pager(name, mode), allocator(nullptr)
     {
         std::string idle_file_name = std::string("idle_") + name;
-        if(mode & OPEN){
-            data_file = std::fopen(name.c_str(), "r+b");
-        }
-        if (data_file){
-            allocator = new Allocator(idle_file_name, OPEN);
-        }else{
-            if(mode & NEW){
-                data_file = std::fopen(name.c_str(), "w+b");
-            }
-            if (data_file){
-                allocator = new Allocator(idle_file_name, NEW);
-            }else{
-                throw std::runtime_error("cannot open data file");
-            }
-        }
+        FileMode status = data_pager.status();
+        allocator = new Allocator(idle_file_name, status);
     }
     
     DataStore::~DataStore()
     {
         delete allocator;
-        std::fclose(data_file);
     }
 
     Bytes DataStore::load(Address address)
     {
         Bytes res;
-        std::fseek(data_file, address, SEEK_SET);
-        std::fread(&res.size, sizeof(res.size), 1, data_file); //load size
+        data_pager.read(&res.size, sizeof(res.size), address);
         res.raw = std::malloc(res.size);
-        std::fread(res.raw, res.size, 1, data_file); //load the byte string
+        data_pager.read(res.raw, res.size, address + sizeof(res.size));
         return res;
     }
 
     Address DataStore::store(Bytes & raw)
     {
-        char * buf = static_cast<char *>(std::malloc(sizeof(raw.size) + raw.size));
-        std::memcpy(buf, &raw.size, sizeof(raw.size));
-        std::memcpy(buf + sizeof(raw.size), raw.raw, raw.size);
         Address res = allocator->alloc(sizeof(raw.size) + raw.size);
-        std::fseek(data_file, res, SEEK_SET);
-        std::fwrite(buf, sizeof(raw.size) + raw.size, 1, data_file); //store
+        data_pager.write(&raw.size, sizeof(raw.size), res);
+        data_pager.write(raw.raw, raw.size, res + sizeof(raw.size));
 
-        std::free(buf);
         //free
         std::free(raw.raw);
         raw.raw = nullptr;
@@ -124,8 +106,7 @@ namespace laindb {
     void DataStore::free(Address address)
     {
         int16_t size;
-        std::fseek(data_file, address, SEEK_SET);
-        std::fread(&size, sizeof(size), 1, data_file); //load size
+        data_pager.read(&size, sizeof(size), address);
         allocator->dealloc(address, sizeof(size) + size);
     }
 }

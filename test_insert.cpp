@@ -38,7 +38,6 @@ int main()
         }
         std::cout << "fetch " << NREC << " " << db.TIME / static_cast<double>(CLOCKS_PER_SEC) << "s" << std::endl;
     }
-/*
     //step 3 delete
     {
         laindb::Database db("123", laindb::OPEN);
@@ -47,6 +46,5 @@ int main()
         }
         std::cout << "erase " << NREC << " " << db.TIME / static_cast<double>(CLOCKS_PER_SEC) << "s" << std::endl;
     }
-    */
     
 }

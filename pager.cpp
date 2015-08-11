@@ -14,9 +14,11 @@ namespace laindb {
     {
         if (mode & OPEN){
             file = std::fopen(name.c_str(), "r+b");
+            _status = OPEN;
         }
         if (!file && (mode & NEW)){
             file = std::fopen(name.c_str(), "w+b");
+            _status = NEW;
         }
         if (file){
             init_cache();
@@ -58,6 +60,7 @@ namespace laindb {
     {
         Page * res = new Page;
         res->address = addr;
+        std::fseek(file, addr, SEEK_SET);
         std::fread(res->content, BLOCK_SIZE, 1, file);
         if (std::ferror(file)){
             std::memset(res->content, 0, BLOCK_SIZE);
@@ -79,39 +82,41 @@ namespace laindb {
         return cache[pos];
     }
 
-    void Pager::read(char * buf, int cnt, Address address)
+    void Pager::read(void * buf, int cnt, Address address)
     {
+        char * cur = static_cast<char *>(buf);
         Address aligned_addr = address /  BLOCK_SIZE * BLOCK_SIZE;
         int len = std::min(BLOCK_SIZE - (address - aligned_addr), cnt);
         Page * tmp = fetch_page(aligned_addr);
-        memcpy(buf, tmp->content + (address - aligned_addr), len);
+        memcpy(cur, tmp->content + (address - aligned_addr), len);
         cnt -= len;
-        buf += len;
+        cur += len;
         while(cnt){
             aligned_addr += BLOCK_SIZE;
             len = std::min(BLOCK_SIZE, cnt);
             tmp = fetch_page(aligned_addr);
-            memcpy(buf, tmp->content, len);
+            memcpy(cur, tmp->content, len);
             cnt -= len;
-            buf += len;
+            cur += len;
         }
     }
 
-    void Pager::write(char * buf, int cnt, Address address)
+    void Pager::write(void * buf, int cnt, Address address)
     {
+        char * cur = static_cast<char *>(buf);
         Address aligned_addr = address /  BLOCK_SIZE * BLOCK_SIZE;
         int len = std::min(BLOCK_SIZE - (address - aligned_addr), cnt);
         Page * tmp = fetch_page(aligned_addr);
-        memcpy(tmp->content + (address - aligned_addr), buf, len);
+        memcpy(tmp->content + (address - aligned_addr), cur, len);
         cnt -= len;
-        buf += len;
+        cur += len;
         while(cnt){
             aligned_addr += BLOCK_SIZE;
             len = std::min(BLOCK_SIZE, cnt);
             tmp = fetch_page(aligned_addr);
-            memcpy(tmp->content, buf, len);
+            memcpy(tmp->content, cur, len);
             cnt -= len;
-            buf += len;
+            cur += len;
         }
     }
 }
