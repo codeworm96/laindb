@@ -4,6 +4,8 @@
 #include <utility>
 
 namespace laindb {
+    //block size of the disk
+    const int BLOCK_SIZE = 4096;
 
     //type alias for Address
     typedef int Address;
