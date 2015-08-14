@@ -22,32 +22,37 @@ namespace laindb {
     };
 
     //comparers
-    inline bool operator<(Key k1, Key k2)
+    inline int key_cmp(const Key & k1, const Key & k2)
+    {
+        return std::strcmp(k1.content, k2.content);
+    }
+
+    inline bool operator<(const Key & k1, const Key & k2)
     {
         return (std::strcmp(k1.content, k2.content) < 0);
     }
 
-    inline bool operator<=(Key k1, Key k2)
+    inline bool operator<=(const Key & k1, const Key & k2)
     {
         return (std::strcmp(k1.content, k2.content) <= 0);
     }
 
-    inline bool operator>(Key k1, Key k2)
+    inline bool operator>(const Key & k1, const Key & k2)
     {
         return (std::strcmp(k1.content, k2.content) > 0);
     }
 
-    inline bool operator>=(Key k1, Key k2)
+    inline bool operator>=(const Key & k1, const Key & k2)
     {
         return (std::strcmp(k1.content, k2.content) >= 0);
     }
 
-    inline bool operator==(Key k1, Key k2)
+    inline bool operator==(const Key & k1, const Key & k2)
     {
         return (std::strcmp(k1.content, k2.content) == 0);
     }
 
-    inline bool operator!=(Key k1, Key k2)
+    inline bool operator!=(const Key & k1, const Key & k2)
     {
         return std::strcmp(k1.content, k2.content);
     }

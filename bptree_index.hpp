@@ -144,9 +144,10 @@ namespace laindb {
         int l = 0;
         while(l <= r){
             int m = (l + r) / 2;
-            if (node->keys[m] == x){
+            int cmp_res = key_cmp(node->keys[m], x);
+            if (cmp_res == 0){ //equal
                 return m;
-            }else if (node->keys[m] > x){
+            }else if (cmp_res > 0){ //node->keys[m] > x
                 r = m - 1;
             }else{
                 l = m + 1;
