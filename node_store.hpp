@@ -90,6 +90,9 @@ namespace laindb {
 
             //id of root of the b+tree
             int rootID;
+
+            //tmp space
+            char raw[BLOCK_SIZE];
     };
 
     NodeStore::NodeStore(std::string file_name, FileMode mode) :name(file_name), file(nullptr), size(0), rootID(0)
@@ -165,7 +168,6 @@ namespace laindb {
             return;
         }
 
-        char * raw = static_cast<char *>(std::malloc(BLOCK_SIZE));
         char * cur = raw;
         std::memcpy(cur, &node->num, sizeof(node->num));
         cur += sizeof(node->num);
@@ -183,7 +185,6 @@ namespace laindb {
 
         std::fseek(file, BLOCK_SIZE * node->id, SEEK_SET);
         std::fwrite(raw, BLOCK_SIZE, 1, file);
-        std::free(raw);
         delete node;
     }
 
@@ -193,7 +194,6 @@ namespace laindb {
         res->id = id;
         res->modified = false;
 
-        char * raw = static_cast<char *>(std::malloc(BLOCK_SIZE));
         std::fseek(file, BLOCK_SIZE * id, SEEK_SET);
         std::fread(raw, BLOCK_SIZE, 1, file);
         char * cur = raw;
@@ -212,7 +212,6 @@ namespace laindb {
 
         std::memcpy(res->children, cur, sizeof(Address) * num);
 
-        std::free(raw);
         return res;
     }
 
