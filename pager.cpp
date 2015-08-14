@@ -51,14 +51,17 @@ namespace laindb {
 
     void Pager::write_to_disk(Page * page)
     {
-        std::fseek(file, page->address, SEEK_SET);
-        std::fwrite(page->content, BLOCK_SIZE, 1, file);
+        if (page->modified){
+            std::fseek(file, page->address, SEEK_SET);
+            std::fwrite(page->content, BLOCK_SIZE, 1, file);
+        }
         delete page;
     }
 
     Page * Pager::read_from_disk(Address addr)
     {
         Page * res = new Page;
+        res->modified = false;
         res->address = addr;
         std::fseek(file, addr, SEEK_SET);
         std::fread(res->content, BLOCK_SIZE, 1, file);
@@ -107,6 +110,7 @@ namespace laindb {
         Address aligned_addr = address /  BLOCK_SIZE * BLOCK_SIZE;
         int len = std::min(BLOCK_SIZE - (address - aligned_addr), cnt);
         Page * tmp = fetch_page(aligned_addr);
+        tmp->modified = true;
         memcpy(tmp->content + (address - aligned_addr), cur, len);
         cnt -= len;
         cur += len;
@@ -114,6 +118,7 @@ namespace laindb {
             aligned_addr += BLOCK_SIZE;
             len = std::min(BLOCK_SIZE, cnt);
             tmp = fetch_page(aligned_addr);
+            tmp->modified = true;
             memcpy(tmp->content, cur, len);
             cnt -= len;
             cur += len;

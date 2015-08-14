@@ -16,6 +16,8 @@ namespace laindb {
      */
 
     struct Page {
+        bool modified;
+
         int address;
 
         char content[BLOCK_SIZE];
