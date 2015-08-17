@@ -12,6 +12,8 @@
 
 namespace laindb {
 
+    //space for a node
+    const int NODE_SIZE = BLOCK_SIZE;
 
     /**
      * class: NodeStore
@@ -79,8 +81,8 @@ namespace laindb {
             //name
             std::string name;
 
-            //file
-            FILE * file;
+            //pager
+            Pager pager;
 
             //available blocks
             std::vector<int> blocks;
@@ -90,22 +92,16 @@ namespace laindb {
 
             //id of root of the b+tree
             int rootID;
-
-            //tmp space
-            char raw[BLOCK_SIZE];
     };
 
-    NodeStore::NodeStore(std::string file_name, FileMode mode) :name(file_name), file(nullptr), size(0), rootID(0)
+    NodeStore::NodeStore(std::string file_name, FileMode mode) :name(file_name), pager(name, mode), size(0), rootID(0)
     {
         std::string idle_name = std::string("idle_") + name;
-        if(mode & OPEN){
-            file = std::fopen(name.c_str(), "r+b");
-        }
-        if(file){
+        if(pager.status() == OPEN){
             FILE * idle_file = std::fopen(idle_name.c_str(), "rb");
             if (idle_file){
-                std::fread(&rootID, sizeof(rootID), 1, file);
-                std::fread(&size, sizeof(size), 1, file);
+                pager.read(&rootID, sizeof(rootID), 0);
+                pager.read(&size, sizeof(size), sizeof(rootID));
 
                 int num;
                 std::fread(&num, sizeof(num), 1, idle_file);
@@ -118,23 +114,14 @@ namespace laindb {
             }else{
                 throw std::runtime_error("error when opening index file");
             }
-        }else{
-            if (mode & NEW){
-                file = std::fopen(name.c_str(), "w+b");
-            }
-            if (!file){
-                throw std::runtime_error("error when opening index file");
-            }
         }
     }
 
     NodeStore::~NodeStore()
     {
         std::string idle_name = std::string("idle_") + name;
-        std::fseek(file, 0, SEEK_SET);
-        std::fwrite(&rootID, sizeof(rootID), 1, file);
-        std::fwrite(&size, sizeof(size), 1, file);
-        std::fclose(file);
+        pager.write(&rootID, sizeof(rootID), 0);
+        pager.write(&size, sizeof(size), sizeof(rootID));
 
         FILE * idle_file = std::fopen(idle_name.c_str(), "wb");
         int num = blocks.size();
@@ -167,50 +154,19 @@ namespace laindb {
             delete node;
             return;
         }
+        
+        pager.write(node, sizeof(*node), NODE_SIZE * node->id);
 
-        char * cur = raw;
-        std::memcpy(cur, &node->num, sizeof(node->num));
-        cur += sizeof(node->num);
-        std::memcpy(cur, &node->is_leaf, sizeof(node->is_leaf));
-        cur += sizeof(node->is_leaf);
-        std::memcpy(cur, node->keys, sizeof(Key) * node->num);
-        cur += sizeof(Key) * node->num;
-
-        int num = node->num;
-        if(!node->is_leaf){
-            num++;
-        }
-
-        std::memcpy(cur, node->children, sizeof(Address) * num);
-
-        std::fseek(file, BLOCK_SIZE * node->id, SEEK_SET);
-        std::fwrite(raw, BLOCK_SIZE, 1, file);
         delete node;
     }
 
     BNode * NodeStore::load(int id)
     {
         BNode * res = new BNode;
+        pager.read(res, sizeof(*res), NODE_SIZE * id);
+        
         res->id = id;
         res->modified = false;
-
-        std::fseek(file, BLOCK_SIZE * id, SEEK_SET);
-        std::fread(raw, BLOCK_SIZE, 1, file);
-        char * cur = raw;
-
-        std::memcpy(&res->num, cur, sizeof(res->num));
-        cur += sizeof(res->num);
-        std::memcpy(&res->is_leaf, cur, sizeof(res->is_leaf));
-        cur += sizeof(res->is_leaf);
-        std::memcpy(res->keys, cur, sizeof(Key) * res->num);
-        cur += sizeof(Key) * res->num;
-
-        int num = res->num;
-        if(!res->is_leaf){
-            num++;
-        }
-
-        std::memcpy(res->children, cur, sizeof(Address) * num);
 
         return res;
     }

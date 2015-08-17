@@ -8,7 +8,7 @@
 
 namespace laindb {
 
-    const int CACHE_SIZE = 1543;
+    const int CACHE_SIZE = 6151;
 
     /**
      * struct: Page

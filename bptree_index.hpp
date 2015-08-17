@@ -5,7 +5,7 @@
 
 #include "utility.h"
 #include "bnode.h"
-#include "cache.hpp"
+#include "node_store.hpp"
 
 
 namespace laindb {
@@ -59,7 +59,7 @@ namespace laindb {
             BNode * root;
 
             //to store the nodes
-            Cache store;
+            NodeStore store;
 
             /*
              * method: search
