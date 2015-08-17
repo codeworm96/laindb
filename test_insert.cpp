@@ -3,11 +3,15 @@
 #include <sstream>
 #include <ctime>
 #include <stdexcept>
+#include <vector>
+#include <algorithm>
 
 #include "database.hpp"
 #include "utility.h"
 
 const int NREC = 1000000;
+
+std::vector<std::string> input;
 
 std::string itos(int x)
 {
@@ -18,11 +22,17 @@ std::string itos(int x)
 
 int main()
 {
+    for (int i = 0; i < NREC; ++i){
+      input.push_back(itos(i));
+    }
+
+    std::random_shuffle(input.begin(), input.end());
+
     //step 1 insert
     {
         laindb::Database db("123", laindb::NEW);
-        for (int i = NREC - 1; i >= 0; --i){
-            db.put(itos(i).c_str(), i);
+        for (int i = 0; i < NREC; ++i){
+            db.put(input[i].c_str(), i);
         }
         std::cout << "insert " << NREC << " " << db.TIME / static_cast<double>(CLOCKS_PER_SEC) << "s" << std::endl;
     }
@@ -31,7 +41,7 @@ int main()
     {
         laindb::Database db("123", laindb::OPEN);
         for (int i = 0; i < NREC; ++i){
-            int t = db.get(itos(i).c_str());
+            int t = db.get(input[i].c_str());
             if (t != i){
                 throw std::runtime_error("error");
             }
@@ -42,7 +52,7 @@ int main()
     {
         laindb::Database db("123", laindb::OPEN);
         for (int i = 0; i < NREC; ++i){
-            db.erase(itos(i).c_str());
+            db.erase(input[i].c_str());
         }
         std::cout << "erase " << NREC << " " << db.TIME / static_cast<double>(CLOCKS_PER_SEC) << "s" << std::endl;
     }
