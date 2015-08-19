@@ -10,7 +10,7 @@
 
 namespace laindb {
 
-    Pager::Pager(const std::string & name, FileMode mode):file(nullptr)
+    Pager::Pager(const std::string & name, FileMode mode, int size_limit):file(nullptr), max_size(size_limit), size(0)
     {
         if (mode & OPEN){
             file = std::fopen(name.c_str(), "r+b");
@@ -35,18 +35,17 @@ namespace laindb {
 
     void Pager::init_cache()
     {
-        for (int i = 0; i < CACHE_SIZE; ++i){
-            cache[i] = nullptr;
-        }
+        list_head = new Page;
+        list_head->prev = list_head;
+        list_head->next = list_head;
     }
 
     void Pager::clear_cache()
     {
-        for (int i = 0; i < CACHE_SIZE; ++i){
-            if (cache[i]){
-                write_to_disk(cache[i]);
-            }
+        while(list_head->next != list_head){
+            evict(list_head->next);
         }
+        delete list_head;
     }
 
     void Pager::write_to_disk(Page * page)
@@ -71,18 +70,49 @@ namespace laindb {
         return res;
     }
 
+    Address Pager::evict(Page * p)
+    {
+        --size;
+        
+        //remove form list
+        p->next->prev = p->prev;
+        p->prev->next = p->next;
+
+        Address res = p->address;
+        write_to_disk(p);
+        return res;
+    }
+
     Page * Pager::fetch_page(Address addr)
     {
-        int pos = addr % CACHE_SIZE;
-        if (cache[pos]){
-            if (cache[pos]->address != addr){
-                write_to_disk(cache[pos]);
-                cache[pos] = read_from_disk(addr);
-            }
+        auto iter = index.find(addr);
+        if (iter != index.end()){
+            Page * res = iter->second;
+            res->prev->next = res->next;
+            res->next->prev = res->prev;
+
+            res->next = list_head->next;
+            res->prev = list_head;
+
+            res->prev->next = res;
+            res->next->prev = res;
+            return res;
         }else{
-            cache[pos] = read_from_disk(addr);
+            if (size == max_size){
+                Address tmp = evict(list_head->prev);
+                index.erase(tmp);
+            }
+
+            ++size;
+            Page * res = read_from_disk(addr);
+            res->next = list_head->next;
+            res->prev = list_head;
+
+            res->prev->next = res;
+            res->next->prev = res;
+            index[addr] = res;
+            return res;
         }
-        return cache[pos];
     }
 
     void Pager::read(void * buf, int cnt, Address address)

@@ -69,7 +69,7 @@ namespace laindb {
             Allocator * allocator;
     };
 
-    DataStore::DataStore(const std::string & name, FileMode mode) :data_pager(name, mode), allocator(nullptr)
+    DataStore::DataStore(const std::string & name, FileMode mode) :data_pager(name, mode, 5000), allocator(nullptr)
     {
         std::string idle_file_name = std::string("idle_") + name;
         FileMode status = data_pager.status();

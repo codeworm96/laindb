@@ -3,12 +3,11 @@
 
 #include <cstdio>
 #include <string>
+#include <map>
 
 #include "utility.h"
 
 namespace laindb {
-
-    const int CACHE_SIZE = 6151;
 
     /**
      * struct: Page
@@ -19,6 +18,10 @@ namespace laindb {
         bool modified;
 
         int address;
+
+        Page * prev;
+
+        Page * next;
 
         char content[BLOCK_SIZE];
     };
@@ -37,7 +40,7 @@ namespace laindb {
              * construct a pager for file `name`
              */
 
-            Pager(const std::string & name, FileMode mode);
+            Pager(const std::string & name, FileMode mode, int size_limit);
 
             /**
              * Destructor
@@ -71,8 +74,17 @@ namespace laindb {
             //the file that the object manages
             FILE * file;
 
-            //cache
-            Page * cache[CACHE_SIZE];
+            //max size
+            int max_size;
+
+            //size of cache
+            int size;
+
+            //index of block
+            std::map<Address, Page *> index;
+
+            //head of block list
+            Page * list_head;
 
             //status of the file
             FileMode _status;
@@ -86,6 +98,8 @@ namespace laindb {
             Page * read_from_disk(Address addr);
 
             Page * fetch_page(Address addr);
+
+            Address evict(Page * p);
     };
 }
 
