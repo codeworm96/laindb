@@ -4,6 +4,15 @@
 #include <utility>
 
 namespace laindb {
+    //static assert
+    template <bool x> struct STATIC_ASSERTION_FAILURE;
+    template <> struct STATIC_ASSERTION_FAILURE<true> {};
+    //STATIC_ASSERTION_FAILURE<false> is not defined
+
+    template<int x> struct static_assert_test {};
+
+#define STATIC_ASSERT(EXPR) typedef static_assert_test<sizeof(STATIC_ASSERTION_FAILURE<bool(EXPR)>)> static_assert_typedef_
+
     //block size of the disk
     const int BLOCK_SIZE = 4096;
 

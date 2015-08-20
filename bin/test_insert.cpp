@@ -6,8 +6,8 @@
 #include <vector>
 #include <algorithm>
 
-#include "database.hpp"
-#include "utility.h"
+#include "../lib/database.hpp"
+#include "../lib/utility.h"
 
 const int NREC = 1000000;
 

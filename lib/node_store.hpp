@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <cstdio>
 #include <cstdlib>
+#include <type_traits>
 
 #include "bptree_index.hpp"
 #include "utility.h"
@@ -14,6 +15,10 @@ namespace laindb {
 
     //space for a node
     const int NODE_SIZE = BLOCK_SIZE;
+
+    //restrains for BNode
+    STATIC_ASSERT(NODE_SIZE >= sizeof(BNode));
+    STATIC_ASSERT(std::is_pod<BNode>::value);
 
     /**
      * class: NodeStore
