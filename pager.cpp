@@ -7,10 +7,12 @@
 #include <cstring>
 
 #include "utility.h"
+#include "page.h"
+#include "hashmap.h"
 
 namespace laindb {
 
-    Pager::Pager(const std::string & name, FileMode mode, int size_limit):file(nullptr), max_size(size_limit), size(0)
+    Pager::Pager(const std::string & name, FileMode mode, int size_limit):file(nullptr), index(size_limit), max_size(size_limit), size(0)
     {
         if (mode & OPEN){
             file = std::fopen(name.c_str(), "r+b");
@@ -85,9 +87,8 @@ namespace laindb {
 
     Page * Pager::fetch_page(Address addr)
     {
-        auto iter = index.find(addr);
-        if (iter != index.end()){
-            Page * res = iter->second;
+        Page * res = index.get(addr);
+        if (res){
             res->prev->next = res->next;
             res->next->prev = res->prev;
 
@@ -110,7 +111,7 @@ namespace laindb {
 
             res->prev->next = res;
             res->next->prev = res;
-            index[addr] = res;
+            index.put(addr, res);
             return res;
         }
     }

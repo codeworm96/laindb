@@ -3,30 +3,13 @@
 
 #include <cstdio>
 #include <string>
-#include <map>
 
 #include "utility.h"
+#include "page.h"
+#include "hashmap.h"
 
 namespace laindb {
 
-    /**
-     * struct: Page
-     * A page in file
-     */
-
-    struct Page {
-        bool modified;
-
-        int address;
-
-        Page * prev;
-
-        Page * next;
-
-        char content[BLOCK_SIZE];
-    };
-        
-     
     /**
      * class: Pager
      * manages the pages (as a cache)
@@ -81,7 +64,7 @@ namespace laindb {
             int size;
 
             //index of block
-            std::map<Address, Page *> index;
+            HashMap index;
 
             //head of block list
             Page * list_head;

@@ -94,7 +94,7 @@ namespace laindb {
             int rootID;
     };
 
-    NodeStore::NodeStore(std::string file_name, FileMode mode) :name(file_name), pager(name, mode, 10000), size(0), rootID(0)
+    NodeStore::NodeStore(std::string file_name, FileMode mode) :name(file_name), pager(name, mode, 6151), size(0), rootID(0)
     {
         std::string idle_name = std::string("idle_") + name;
         if(pager.status() == OPEN){
