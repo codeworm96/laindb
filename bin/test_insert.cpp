@@ -30,7 +30,7 @@ int main()
 
     //step 1 insert
     {
-        laindb::Database db("123", laindb::NEW);
+        laindb::Database<int> db("123", laindb::NEW);
         for (int i = 0; i < NREC; ++i){
             db.put(input[i].c_str(), i);
         }
@@ -39,7 +39,7 @@ int main()
     
     //step 2 fetch
     {
-        laindb::Database db("123", laindb::OPEN);
+        laindb::Database<int> db("123", laindb::OPEN);
         for (int i = 0; i < NREC; ++i){
             int t = db.get(input[i].c_str());
             if (t != i){
@@ -50,7 +50,7 @@ int main()
     }
     //step 3 delete
     {
-        laindb::Database db("123", laindb::OPEN);
+        laindb::Database<int> db("123", laindb::OPEN);
         for (int i = 0; i < NREC; ++i){
             db.erase(input[i].c_str());
         }

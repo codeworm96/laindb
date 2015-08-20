@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <type_traits>
 
 #include "bytes.h"
 
@@ -14,11 +15,11 @@ namespace laindb {
      * & that converts Bytes to type T
      */
 
-    //NOTE: use these alias to replace template parameter for now
-    typedef int T;//tmp;
-
-    class DefaultSerializer {
+    template<typename T> class DefaultSerializer {
         public:
+
+            //T must be a POD to use this serializer
+            STATIC_ASSERT(std::is_pod<T>::value);
 
             /**
              * Function: serialize
@@ -36,14 +37,14 @@ namespace laindb {
             static T deserialize(Bytes & raw);
     };
 
-    Bytes DefaultSerializer::serialize(const T & obj)
+    template<typename T> Bytes DefaultSerializer<T>::serialize(const T & obj)
     {
         Bytes res(sizeof(obj), std::malloc(sizeof(obj)));
         std::memcpy(res.raw, &obj, res.size);
         return res;
     }
 
-    T DefaultSerializer::deserialize(Bytes & raw)
+    template<typename T> T DefaultSerializer<T>::deserialize(Bytes & raw)
     {
         T res(*(static_cast<T *>(raw.raw)));
         std::free(raw.raw); //free space

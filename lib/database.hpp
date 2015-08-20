@@ -25,12 +25,10 @@ namespace laindb {
      * It provides users interfaces to operate the database.
      */
 
-    //NOTE: use these alias to replace template parameter for now
-    typedef int Value;//tmp;
-    typedef DataStore Data;//tmp;
-    typedef BptreeIndex Index;//tmp;
-    typedef DefaultSerializer ValueSerializer;//tmp;
-
+    template <typename Value,
+             typename ValueSerializer = DefaultSerializer<Value>,
+             typename Index = BptreeIndex,
+             typename Data = DataStore>
     class Database {
         public:
 
@@ -90,7 +88,8 @@ namespace laindb {
 
     };
 
-    Database::Database(const std::string & name, FileMode mode) 
+    template <typename Value, typename ValueSerializer, typename Index, typename Data>
+    Database<Value, ValueSerializer, Index, Data>::Database(const std::string & name, FileMode mode) 
         :_name(name), data(name + std::string(".dat"), mode), index(name + std::string(".idx"), mode) 
     {
 #ifdef BENCHMARK
@@ -98,9 +97,11 @@ namespace laindb {
 #endif
     }
 
-    Database::~Database() {}
+    template <typename Value, typename ValueSerializer, typename Index, typename Data>
+    Database<Value, ValueSerializer, Index, Data>::~Database() {}
 
-    Value Database::get(const char * key)
+    template <typename Value, typename ValueSerializer, typename Index, typename Data>
+    Value Database<Value, ValueSerializer, Index, Data>::get(const char * key)
     {
 #ifdef BENCHMARK
         int START = std::clock();
@@ -121,7 +122,8 @@ namespace laindb {
         return res;
     }
 
-    void Database::put(const char * key, const Value & value)
+    template <typename Value, typename ValueSerializer, typename Index, typename Data>
+    void Database<Value, ValueSerializer, Index, Data>::put(const char * key, const Value & value)
     {
 #ifdef BENCHMARK
         int START = std::clock();
@@ -140,7 +142,8 @@ namespace laindb {
 #endif
     }
 
-    void Database::erase(const char * key)
+    template <typename Value, typename ValueSerializer, typename Index, typename Data>
+    void Database<Value, ValueSerializer, Index, Data>::erase(const char * key)
     {
 #ifdef BENCHMARK
         int START = std::clock();
