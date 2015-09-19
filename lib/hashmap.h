@@ -5,6 +5,9 @@
 
 namespace laindb {
 
+    //magic for hash function
+    const long long MAGIC = 31;
+
     /**
      * struct: bucket
      * bucket for HashMap
@@ -12,6 +15,7 @@ namespace laindb {
 
     struct Bucket {
 
+        //address in file of the page
         Address addr;
 
         Page * page;
@@ -58,14 +62,17 @@ namespace laindb {
              */
 
             void erase(Address addr);
+
         private:
+            //number of buckets of the HashMap
             int _capacity;
 
+            //Buckets
             Bucket ** hash;
 
             int hash_code(Address addr)
             {
-                return addr % _capacity;
+                return (addr * MAGIC) % _capacity;
             }
 
     };

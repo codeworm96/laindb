@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "utility.h"
+#include "utility.hpp"
 
 namespace laindb {
 

@@ -7,6 +7,7 @@
 namespace laindb {
 
     //max length of the key
+    //actually the length of the key must < it
     const int MAX_KEY_LENGTH = 16;
 
     /**
@@ -54,7 +55,7 @@ namespace laindb {
 
     inline bool operator!=(const Key & k1, const Key & k2)
     {
-        return std::strcmp(k1.content, k2.content);
+        return (std::strcmp(k1.content, k2.content) != 0);
     }
 
     /**

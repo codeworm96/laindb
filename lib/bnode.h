@@ -2,12 +2,12 @@
 #define LAINDB_BNODE_H_
 
 #include "key_type.h"
-#include "utility.h"
+#include "utility.hpp"
 
 namespace laindb {
 
     //the minimum # of keys in a node (except root)
-    const int MIN_KEYS = 64;
+    const int MIN_KEYS = 96;
     //the maximum # of keys in a node
     const int MAX_KEYS = MIN_KEYS * 2 + 1;
     

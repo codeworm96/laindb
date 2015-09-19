@@ -52,7 +52,9 @@ namespace laindb {
     void HashMap::erase(Address addr)
     {
         int pos = hash_code(addr);
-        Bucket ** p = &hash[pos];
+
+        //tricky, using pointer to pointer to modifiy pointer
+        Bucket ** p = &(hash[pos]);
         while(*p){
             if((*p)->addr == addr){
                 Bucket * tmp = *p;

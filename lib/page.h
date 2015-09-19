@@ -1,7 +1,7 @@
 #ifndef LAINDB_PAGE_H_
 #define LAINDB_PAGE_H_
 
-#include "utility.h"
+#include "utility.hpp"
 
 namespace laindb {
     
@@ -13,10 +13,11 @@ namespace laindb {
     struct Page {
         bool modified;
 
+        //address in file
         int address;
 
+        //for link list
         Page * prev;
-
         Page * next;
 
         char content[BLOCK_SIZE];

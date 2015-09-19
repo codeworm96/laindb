@@ -8,19 +8,20 @@
 #endif
 
 #include <string>
-#include <stdexcept>
 
 #include "key_type.h"
 #include "bytes.h"
-#include "utility.h"
+#include "utility.hpp"
 #include "default_serializer.hpp"
 #include "data_store.hpp"
-#include "bptree_index.hpp"
+#include "default_allocator.h"
+#include "bptree_index.h"
+#include "optional.hpp"
 
 namespace laindb {
 
     /**
-     * Class: Database:
+     * Class template: Database:
      * It is the class that represents the whole database.
      * It provides users interfaces to operate the database.
      */
@@ -28,7 +29,7 @@ namespace laindb {
     template <typename Value,
              typename ValueSerializer = DefaultSerializer<Value>,
              typename Index = BptreeIndex,
-             typename Data = DataStore>
+             typename Data = DataStore<DefaultAllocator> >
     class Database {
         public:
 
@@ -43,15 +44,15 @@ namespace laindb {
             /**
              * Method: get
              * Fetch the value from the data file according to the key
+             * returns a Optional<Value> type to represent a possible fail operation
              */
-            //TODO: when fails?
 
-            Value get(const char * key);
+            Optional<Value> get(const char * key);
 
             /*
              * Method: put
              * Put a pair of key/value into the database
-             * if the key exists, overwrites the value.
+             * if the key exists, updates the value.
              */
 
             void put(const char * key, const Value & value);
@@ -88,6 +89,7 @@ namespace laindb {
 
     };
 
+    //constructor
     template <typename Value, typename ValueSerializer, typename Index, typename Data>
     Database<Value, ValueSerializer, Index, Data>::Database(const std::string & name, FileMode mode) 
         :_name(name), data(name + std::string(".dat"), mode), index(name + std::string(".idx"), mode) 
@@ -97,11 +99,12 @@ namespace laindb {
 #endif
     }
 
+    //destructor
     template <typename Value, typename ValueSerializer, typename Index, typename Data>
     Database<Value, ValueSerializer, Index, Data>::~Database() {}
 
     template <typename Value, typename ValueSerializer, typename Index, typename Data>
-    Value Database<Value, ValueSerializer, Index, Data>::get(const char * key)
+    Optional<Value> Database<Value, ValueSerializer, Index, Data>::get(const char * key)
     {
 #ifdef BENCHMARK
         int START = std::clock();
@@ -109,10 +112,11 @@ namespace laindb {
 
         Address address = index.get(make_key(key));
         if (address == ENTRY_NOT_FOUND){
-            throw std::runtime_error("not found");
+            Optional<Value> res;
+            return res;
         }
         Bytes raw = data.load(address);
-        Value res = ValueSerializer::deserialize(raw);
+        Optional<Value> res(ValueSerializer::deserialize(raw));
 
 #ifdef BENCHMARK
         int END = std::clock();

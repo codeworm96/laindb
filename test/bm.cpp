@@ -1,95 +1,73 @@
 #define BENCHMARK
 #include <iostream>
+#include <vector>
 #include <ctime>
-#include <set>
-#include <sstream>
 
-#include "database.hpp"
-#include "utility.h"
+#include "../lib/database.hpp"
+#include "../lib/utility.hpp"
+#include "../lib/optional.hpp"
+#include "../lib/bptree_index.h"
+#include "../lib/data_store.hpp"
+#include "../lib/append_only_allocator.h"
+#include "data_seeder.h"
 
-const int NREC = 1000000;
-
-std::string itos(int x)
+double benchmark(int n)
 {
-  std::ostringstream oss;
-    oss << x;
-    return oss.str();
+    DataSeeder seeder(2 * n);
+    laindb::Database<int, laindb::DefaultSerializer<int>, laindb::BptreeIndex, laindb::DataStore<laindb::AppendOnlyAllocator> > db("test", laindb::NEW);
+    std::vector<std::string> keys;
+    
+    for (int i = 0; i < n; ++i){
+        keys.push_back(seeder.key_for_put());
+    }
+    for (int i = 0; i < n; ++i){
+        db.put(keys[i].c_str(), i);
+    }
+    for (int i = 0; i < n; ++i){
+        laindb::Optional<int> res = db.get(keys[i].c_str());
+    }
+    
+    int size = n;
+    for (int i = 0; i < 5 * n; ++i){
+        laindb::Optional<int> res = db.get(seeder.key_for_get().c_str());
+        if (i % 37 == 0){
+            db.erase(seeder.key_for_del().c_str());
+            --size;
+        }
+        if (i % 11 == 0){
+            std::string key = seeder.key_for_put();
+            db.put(key.c_str(), i);
+            ++size;
+            laindb::Optional<int> res = db.get(key.c_str());
+        }
+        if (i % 17 == 0){
+            db.put(seeder.key_for_get().c_str(), i);
+        }
+    }
+    
+    while (size > 0){
+        for (int i = 0; i < 10; ++i){
+            laindb::Optional<int> res = db.get(seeder.key_for_get().c_str());
+        }
+        db.erase(seeder.key_for_del().c_str());
+        --size;
+    }
+    return db.TIME / static_cast<double>(CLOCKS_PER_SEC);
 }
-
 
 int main()
 {
-    laindb::Database db("123", laindb::NEW);
-    std::set<int> keys;
-
-    //step 1
-    for (int i = 0; i < NREC; ++i){
-        db.put(itos(i).c_str(), i);
-        keys.insert(i);
+    std::vector<double> res;
+    for (int i = 1 << 16; i < 1 << 20; i += 1 << 16){
+        res.push_back(benchmark(i));
     }
-    
-    std::cout << "step 1" << std::endl;
-    
-    //step 2
-    for (int i = 0; i < NREC; ++i){
-        int x = db.get(itos(i).c_str());
+    std::cout << '[';
+    for (int i = 0; i < res.size(); ++i){
+        if (i > 0){
+            std::cout << ',';
+        }
+        std::cout << res[i];
     }
-
-    std::cout << "step 2" << std::endl;
-
-    //step 3
-    for (int i = 0; i < NREC * 5; ++i){
-        int k = rand() % (5 * NREC);
-        while(keys.count(k) == 0){
-            k = rand() % (5 * NREC);
-        }
-        int x = db.get(itos(k).c_str());
-
-        if (i % 37 == 0){
-            int k = rand() % (5 * NREC);
-            while(keys.count(k) == 0){
-                k = rand() % (5 * NREC);
-            }
-            db.erase(itos(k).c_str());
-            keys.erase(k);
-        }
-
-        if (i % 11 == 0){
-            int k = rand() % (5 * NREC);
-            while(keys.count(k)){
-                k = rand() % (5 * NREC);
-            }
-            db.put(itos(k).c_str(), k);
-            keys.insert(k);
-            int x = db.get(itos(k).c_str());
-        }
-
-        if (i % 17 == 0){
-            int k = rand() % (5 * NREC);
-            while(keys.count(k) == 0){
-                k = rand() % (5 * NREC);
-            }
-            db.put(itos(k).c_str(), k);
-        }
-    }
-
-    std::cout << "step 3" << std::endl;
-
-    std::vector<int> tmp;
-    for (auto & k: keys){
-        tmp.push_back(k);
-    }
-
-    //step 4
-    while(!tmp.empty()){
-        for(int i = 0; i < 10; ++i){
-            int k = rand() % tmp.size();
-            int x = db.get(itos(tmp[k]).c_str());
-        }
-        db.erase(itos(tmp.back()).c_str());
-        tmp.pop_back();
-    }
-    std::cout << "step 4" << std::endl;
-
-    std::cout << db.TIME / static_cast<double>(CLOCKS_PER_SEC) << "s" << std::endl;
+    std::cout << ']' << std::endl;
+    return 0;
 }

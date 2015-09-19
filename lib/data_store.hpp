@@ -9,20 +9,17 @@
 
 #include "pager.h"
 #include "bytes.h"
-#include "utility.h"
+#include "utility.hpp"
 #include "default_allocator.h"
 
 namespace laindb {
 
-    //NOTE: use typedef instead of template parameters now
-    typedef DefaultAllocator Allocator;
-
     /**
-     * Class: DataStore
+     * Class template: DataStore
      * In change of storing the values
      */
 
-    class DataStore{
+    template<typename Allocator = DefaultAllocator> class DataStore{
         public:
 
             /**
@@ -39,7 +36,7 @@ namespace laindb {
              * close data store
              */
 
-            ~DataStore();
+            ~DataStore() { delete allocator; }
 
             /**
              * method: load
@@ -69,19 +66,14 @@ namespace laindb {
             Allocator * allocator;
     };
 
-    DataStore::DataStore(const std::string & name, FileMode mode) :data_pager(name, mode, 6151), allocator(nullptr)
+    template<typename Allocator> DataStore<Allocator>::DataStore(const std::string & name, FileMode mode) :data_pager(name, mode, 6151), allocator(nullptr)
     {
         std::string idle_file_name = std::string("idle_") + name;
         FileMode status = data_pager.status();
         allocator = new Allocator(idle_file_name, status);
     }
     
-    DataStore::~DataStore()
-    {
-        delete allocator;
-    }
-
-    Bytes DataStore::load(Address address)
+    template<typename Allocator> Bytes DataStore<Allocator>::load(Address address)
     {
         Bytes res;
         data_pager.read(&res.size, sizeof(res.size), address);
@@ -90,7 +82,7 @@ namespace laindb {
         return res;
     }
 
-    Address DataStore::store(Bytes & raw)
+    template<typename Allocator> Address DataStore<Allocator>::store(Bytes & raw)
     {
         Address res = allocator->alloc(sizeof(raw.size) + raw.size);
         data_pager.write(&raw.size, sizeof(raw.size), res);
@@ -103,7 +95,7 @@ namespace laindb {
         return res;
     }
 
-    void DataStore::free(Address address)
+    template<typename Allocator> void DataStore<Allocator>::free(Address address)
     {
         int16_t size;
         data_pager.read(&size, sizeof(size), address);

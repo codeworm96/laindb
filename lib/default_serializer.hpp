@@ -6,11 +6,12 @@
 #include <type_traits>
 
 #include "bytes.h"
+#include "utility.hpp"
 
 namespace laindb {
 
     /**
-     * Class: DefaultSerializer
+     * Class template: DefaultSerializer
      * contains methods that converts type T to Bytes
      * & that converts Bytes to type T
      */
@@ -26,7 +27,12 @@ namespace laindb {
              * convert type T to Bytes
              */
 
-            static Bytes serialize(const T & obj);
+            static Bytes serialize(const T & obj)
+            {
+                Bytes res(sizeof(obj), std::malloc(sizeof(obj)));
+                std::memcpy(res.raw, &obj, res.size);
+                return res;
+            }
 
             /**
              * Function: deserialize
@@ -34,22 +40,14 @@ namespace laindb {
              * Side effect: after the call raw will be invalid
              */
 
-            static T deserialize(Bytes & raw);
+            static T deserialize(Bytes & raw)
+            {
+                T res(*(static_cast<T *>(raw.raw)));
+                std::free(raw.raw); //free space
+                return res;
+            }
+
     };
-
-    template<typename T> Bytes DefaultSerializer<T>::serialize(const T & obj)
-    {
-        Bytes res(sizeof(obj), std::malloc(sizeof(obj)));
-        std::memcpy(res.raw, &obj, res.size);
-        return res;
-    }
-
-    template<typename T> T DefaultSerializer<T>::deserialize(Bytes & raw)
-    {
-        T res(*(static_cast<T *>(raw.raw)));
-        std::free(raw.raw); //free space
-        return res;
-    }
 
 }
 

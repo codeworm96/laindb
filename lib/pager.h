@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <string>
 
-#include "utility.h"
+#include "utility.hpp"
 #include "page.h"
 #include "hashmap.h"
 
@@ -13,6 +13,8 @@ namespace laindb {
     /**
      * class: Pager
      * manages the pages (as a cache)
+     * using doubly circular linked list & hashmap
+     * adopted the LRU algorithm
      */
 
     class Pager {
@@ -21,6 +23,7 @@ namespace laindb {
             /**
              * Constructor:
              * construct a pager for file `name`
+             * size_limit: max size for the cache
              */
 
             Pager(const std::string & name, FileMode mode, int size_limit);

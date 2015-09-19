@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Serial Experiments LainDB</title>
+    <meta charset="utf-8">
+    <style type="text/css">
+      .axis path,
+      .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+      }
+      .line {
+        fill:none;
+        stroke-width: 2px;
+      }
+      .legend-color {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+      }
+      #legend li {
+        display:inline-block;
+        margin: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>laindb 单项测试</h1>
+    <div id="graph"></div>
+    <ul id="legend"></ul>
+    <script src="assets/js/d3.min.js"></script>
+    <script src="data/res.js"></script>
+    <script type="text/javascript">
+      function d3_prepare(res){
+        var insert = [];
+        var search = [];
+        var erase = [];
+        for (var i = 0; i < res.length; ++i){
+          var num = res[i][0];
+          insert.push({
+            num: num,
+            time: res[i][1]
+          });
+          search.push({
+            num: num,
+            time: res[i][2]
+          });
+          erase.push({
+            num: num,
+            time: res[i][3]
+          });
+        }
+        return [ {type: 'insert', value: insert},
+          {type: 'search', value: search},
+          {type: 'delete', value: erase} ];
+      }
+
+      var margin = { top:20, right:50, bottom:30, left:50 };
+      var width = 960 - margin.left - margin.right;
+      var height = 500 - margin.top - margin.bottom;
+
+      var color = d3.scale.category10();
+
+      var x = d3.scale.linear()
+        .range([0, width]);
+
+      var y = d3.scale.linear()
+        .range([height, 0]);
+
+      var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient('bottom');
+
+      var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient('left');
+
+      var line = d3.svg.line()
+        .interpolate('basis')
+        .x(function(d) { return x(d.num); })
+        .y(function(d) { return y(d.time); });
+
+      var data = d3_prepare(res);
+      
+      x.domain([
+        d3.min(data, function(d) { return d3.min(d.value, function(v) { return v.num; }); }),
+        d3.max(data, function(d) { return d3.max(d.value, function(v) { return v.num; }); })
+        ]);
+
+      y.domain([
+        d3.min(data, function(d) { return d3.min(d.value, function(v) { return v.time; }); }),
+        d3.max(data, function(d) { return d3.max(d.value, function(v) { return v.time; }); })
+        ]);
+        
+      var svg = d3.select('#graph')
+        .append('svg')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+        
+      svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+
+      svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .text("Time (ms)");
+
+      var test_result = svg.selectAll(".test-result")
+        .data(data)
+        .enter()
+        .append('g')
+        .attr('class', 'test-result');
+
+      test_result.append('path')
+        .attr('class', 'line')
+        .attr('d', function(d) { return line(d.value); })
+        .style('stroke', function (d) { return color(d.type); })
+
+      labels = d3.select('#legend')
+        .selectAll('li')
+        .data(data)
+        .enter()
+        .append('li')
+
+       labels.append('span')
+         .attr('class', 'legend-color')
+         .style('background-color', function (d) { return color(d.type); });
+         
+       labels.append('span')
+         .text(function (d) { return d.type; });
+ 
+    </script>
+  </body>
+<html>

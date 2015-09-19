@@ -1,13 +1,16 @@
-#ifndef LAINDB_UTILITY_H_
-#define LAINDB_UTILITY_H_
+#ifndef LAINDB_UTILITY_HPP_
+#define LAINDB_UTILITY_HPP_
 
 #include <utility>
+#include <iostream>
+#include <cstring>
 
 namespace laindb {
+
     //static assert
     template <bool x> struct STATIC_ASSERTION_FAILURE;
     template <> struct STATIC_ASSERTION_FAILURE<true> {};
-    //STATIC_ASSERTION_FAILURE<false> is not defined
+    //STATIC_ASSERTION_FAILURE<false> is not defined delibrately
 
     template<int x> struct static_assert_test {};
 
@@ -35,7 +38,7 @@ namespace laindb {
      * (left) shift a array of length `len`
      */
 
-    template<typename T> void shift(T * arr, int len)
+    template<typename T> inline void shift(T * arr, int len)
     {
         for (int i = 0; i < len - 1; ++i){
             arr[i] = std::move(arr[i + 1]);
@@ -47,7 +50,7 @@ namespace laindb {
      * (right) shift a array of length `len`
      */
 
-    template<typename T> void unshift(T * arr, int len)
+    template<typename T> inline void unshift(T * arr, int len)
     {
         for (int i = len; i > 0; --i){
             arr[i] = std::move(arr[i - 1]);
@@ -59,11 +62,24 @@ namespace laindb {
      * move `num` items from source to dest
      */
 
-    template<typename T> void item_move(T * dest, T * source, int num)
+    //helper for non-POD
+    template<typename T> inline void item_move_helper(T * dest, T * source, int num, std::false_type)
     {
         for (int i = 0; i < num; ++i){
             dest[i] = std::move(source[i]);
         }
     }
+
+    //helper for POD
+    template<typename T> inline void item_move_helper(T * dest, T * source, int num, std::true_type)
+    {
+        std::memcpy(dest, source, num * sizeof(T));
+    }
+
+    template<typename T> inline void item_move(T * dest, T * source, int num)
+    {
+        item_move_helper(dest, source, num, typename std::is_pod<T>::type());
+    }
+
 }
-#endif //LAINDB_UTILITY_H_
+#endif //LAINDB_UTILITY_HPP_

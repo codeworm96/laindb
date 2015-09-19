@@ -1,7 +1,7 @@
 #ifndef LAINDB_APPEND_ONLY_ALLOCATOR_H_ 
 #define LAINDB_APPEND_ONLY_ALLOCATOR_H_
 
-#include "utility.h"
+#include "utility.hpp"
 
 namespace laindb {
 
