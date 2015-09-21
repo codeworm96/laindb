@@ -1,3 +1,4 @@
+# LainDB
 LainDB is a very simple key-value store engine. LainDB aims to be fast and flexible at the same time,
 so it uses modern c++ features, including nullptr and template. Therefore, LainDB needs c++11
 support. However, Laindb avoids any platform-specific API and can run on any platform.
