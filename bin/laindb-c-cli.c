@@ -62,7 +62,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            printf("Unknow operation\n");
+            printf("Unknown operation\n");
         }
     }
 

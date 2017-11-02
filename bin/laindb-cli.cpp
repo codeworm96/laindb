@@ -68,7 +68,7 @@ int main(int argc, char** argv)
         }else if (command == "EXIT") {
             break;
         }else{
-            std::cout << "Unknow operation" << std::endl;
+            std::cout << "Unknown operation" << std::endl;
         }
     }
 
