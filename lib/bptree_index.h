@@ -13,6 +13,13 @@ namespace laindb {
     const Address ENTRY_NOT_FOUND = -1;
 
     /**
+     * Class: BptreeIter
+     * (forward declaration)
+     */
+
+    class BptreeIter;
+
+    /**
      * Class: Bptree Index
      * A implementation of Index using b+tree
      */
@@ -54,12 +61,20 @@ namespace laindb {
 
             Address erase(const Key & key);
 
+            typedef BptreeIter iterator;
+            typedef std::pair<Key, Address> value_type;
+            typedef std::input_iterator_tag iterator_category;
+            iterator begin();
+            iterator end();
         private:
             //the root of the b+tree, should be in the memory when the database is open
             BNode * root;
 
             //to store the nodes
             NodeStore store;
+
+            // the leftest leaf
+            int leftest;
 
             /*
              * method: search
@@ -118,6 +133,25 @@ namespace laindb {
 
             BNode * adjust_for_del(BNode * p, int pos, BNode * cur);
 
+            friend class BptreeIter;
+    };
+
+    /**
+     * Class: BptreeIter
+     * Iterator of the BptreeIndex
+     */
+
+    class BptreeIter {
+        public:
+            BptreeIter(BptreeIndex * _index, int _node_id, int _pos);
+            bool operator==(const BptreeIter & other);
+            bool operator!=(const BptreeIter & other) { return !(*this == other); }
+            BptreeIter & operator++();
+            std::pair<Key, Address> operator*();
+        private:
+            BptreeIndex * index;
+            int node_id;
+            int pos;
     };
 
 }

@@ -26,7 +26,7 @@ namespace laindb {
         Key keys[MAX_KEYS];
 
         //Note: in a inner node it represents subtrees
-        //in a leaf, children[i] is the value that is associated with keys[i]
+        //in a leaf, children[i] is the value that is associated with keys[i], and the last children links to the next leaf (0 for null)
         Address children[MAX_KEYS + 1];
     };
 

@@ -72,6 +72,31 @@ namespace laindb {
 
             ~Database();
 
+            class iterator {
+                public:
+                    iterator(Database * _db, BptreeIndex::iterator _iter): db(_db), iter(_iter) {}
+                    bool operator==(const iterator & other) { return db == other.db && iter == other.iter; }
+                    bool operator!=(const iterator & other) { return !(*this == other); }
+                    iterator & operator++() {
+                        ++iter;
+                        return *this;
+                    }
+                    std::pair<std::string, Address> operator*() {
+                        std::pair<Key, Address> r = *iter;
+                        Bytes raw = db->data.load(r.second);
+                        Value value = ValueSerializer::deserialize(raw);
+                        return std::make_pair(std::string(r.first.content), value);
+                    }
+                private:
+                    Database * db;
+                    BptreeIndex::iterator iter;
+            };
+
+            typedef std::pair<std::string, Value> value_type;
+            typedef std::input_iterator_tag iterator_category;
+            iterator begin() { return iterator(this, index.begin()); }
+            iterator end() { return iterator(this, index.end()); }
+
 #ifdef BENCHMARK
             int TIME;
 #endif

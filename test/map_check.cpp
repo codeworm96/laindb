@@ -8,7 +8,7 @@
 #include "../lib/utility.hpp"
 #include "../lib/optional.hpp"
 
-const int TEST_NUM = 100000;
+const int TEST_NUM = 10000000;
 
 const int TEST_SIZE = 10000;
 
@@ -66,6 +66,12 @@ int main()
                 db.erase(key.c_str());
                 db2.erase(key);
                 break;
+            size_t size = 0;
+            for (auto kv : db) {
+                ++size;
+                assert_equal(db2[kv.first], kv.second);
+            }
+            assert_equal(size, db2.size());
         }
     }
     

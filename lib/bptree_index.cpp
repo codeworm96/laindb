@@ -9,13 +9,28 @@
 
 namespace laindb {
 
-    BptreeIndex::BptreeIndex(const std::string & name, FileMode mode) :store(name, mode)
+    BptreeIndex::BptreeIndex(const std::string & name, FileMode mode) :store(name, mode), leftest(0)
     {
         int rootID = store.getRootID();
         if(rootID){
             root = store.load(rootID);
         }else{
             root = nullptr;
+        }
+
+        if(root != nullptr){
+            BNode * cur = root;
+            while(!cur->is_leaf){
+                BNode * next = store.load(cur->children[0]);
+                if (cur != root){
+                    store.write(cur);
+                }
+                cur = next;
+            }
+            leftest = cur->id;
+            if (cur != root){
+                store.write(cur);
+            }
         }
     }
 
@@ -98,6 +113,10 @@ namespace laindb {
             right->num = left->num - MIN_KEYS;
             item_move(right->keys, left->keys + MIN_KEYS, right->num);
             item_move(right->children, left->children + MIN_KEYS, right->num);
+
+            // maintain link
+            right->children[right->num] = left->children[left->num];
+            left->children[MIN_KEYS] = right->id;
         }else{
             right->is_leaf = false;
             right->num = left->num - MIN_KEYS - 1;
@@ -126,6 +145,8 @@ namespace laindb {
             root->modified = true;
             root->is_leaf = true;
             root->num = 0;
+            root->children[0] = 0; // link
+            leftest = root->id;
         }
 
         BNode * cur = root;
@@ -218,7 +239,7 @@ namespace laindb {
         int res = cur->children[pos];
 
         shift(cur->keys + pos, cur->num - pos);
-        shift(cur->children + pos, cur->num - pos);
+        shift(cur->children + pos, cur->num - pos + 1); // maintain link
         cur->num--;
         cur->modified = true;
 
@@ -275,7 +296,6 @@ namespace laindb {
 
     BNode * BptreeIndex::adjust_for_del(BNode * p, int pos, BNode * cur)
     {
-        //BNode * cur = store.load(p->children[pos]);
         BNode * l = nullptr;
         BNode * r = nullptr;
         if (pos > 0){
@@ -319,7 +339,7 @@ namespace laindb {
             p->modified = true;
             p->num--;
             item_move(l->keys + l->num, r->keys, r->num);
-            item_move(l->children + l->num, r->children, r->num);
+            item_move(l->children + l->num, r->children, r->num + 1); // maintain link
             l->modified = true;
             l->num += r->num;
         }else{
@@ -350,6 +370,7 @@ namespace laindb {
             cur->modified = true;
             cur->keys[0] = l->keys[l->num - 1];
             cur->children[0] = l->children[l->num - 1];
+            l->children[l->num - 1] = l->children[l->num]; // maintain link
             l->num--;
             l->modified = true;
         }else{
@@ -377,7 +398,7 @@ namespace laindb {
             cur->num++;
             cur->modified = true;
             shift(r->keys, r->num);
-            shift(r->children, r->num);
+            shift(r->children, r->num + 1); // maintain link
             r->num--;
             r->modified = true;
             p->keys[pos] = r->keys[0];
@@ -399,4 +420,46 @@ namespace laindb {
         return cur;
     }
 
+    BptreeIndex::iterator BptreeIndex::begin() {
+        return iterator(this, leftest, 0);
+    }
+
+    BptreeIndex::iterator BptreeIndex::end() {
+        return iterator(this, 0, 0);
+
+    }
+
+    BptreeIter::BptreeIter(BptreeIndex * _index, int _node_id, int _pos): index(_index), node_id(_node_id), pos(_pos) {}
+
+    bool BptreeIter::operator==(const BptreeIter & other) {
+        if (index == other.index) {
+            if (node_id > 0) {
+                return node_id == other.node_id && pos == other.pos;
+            } else {
+                return node_id == other.node_id;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    BptreeIter & BptreeIter::operator++() {
+        if (node_id > 0) {
+            BNode * cur = index->store.load(node_id);
+            ++pos;
+            if (pos == cur->num) {
+                pos = 0;
+                node_id = cur->children[cur->num];
+            }
+            index->store.write(cur);
+        }
+        return *this;
+    }
+
+    std::pair<Key, Address> BptreeIter::operator*() {
+        BNode * cur = index->store.load(node_id);
+        std::pair<Key, Address> res = std::make_pair(cur->keys[pos], cur->children[pos]);
+        index->store.write(cur);
+        return res;
+    }
 }
